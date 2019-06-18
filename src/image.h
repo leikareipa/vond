@@ -9,7 +9,7 @@
 
 #include <QImage>
 #include <QColor>
-#include "../../src/memory.h"
+#include "../../src/memory/memory_interface.h"
 
 struct image_s
 {

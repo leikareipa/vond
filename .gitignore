@@ -1,0 +1,4 @@
+bin/
+tools/
+.vscode/
+*.pro.user

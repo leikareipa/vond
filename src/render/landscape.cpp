@@ -9,6 +9,7 @@
 
 #include <cstdlib>
 #include "../../src/matrix44.h"
+#include "../../src/vector.h"
 #include "../../src/memory.h"
 #include "../../src/common.h"
 #include "../../src/camera.h"
