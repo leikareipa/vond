@@ -14,4 +14,4 @@ Building on Windows should be much the same, though I can't say for sure.
 
 I use GCC and Qt 5.5 with Vond, so those might give you the fewest headaches in terms of feature compatibility and so on.
 
-![A screenshot of VCS](http://tarpeeksihyvaesoft.com/soft/img/vond.png)
+![A screenshot of Vond](images/screenshots/vond-1.png)
