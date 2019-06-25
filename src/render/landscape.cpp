@@ -26,9 +26,9 @@
 
 // The maximum number of steps from the camera that rays are traced. If the ray
 // exceeds the bounds of the heightmap, it'll be wrapped around it.
-static const uint MAX_RAY_LENGTH = 32768;
+static const uint MAX_RAY_LENGTH = 1000000;
 
-static enum class detail_level_e { HIGH, MID, LOW } DETAIL_LEVEL = detail_level_e::HIGH;
+static enum class detail_level_e { high, mid, low } DETAIL_LEVEL = detail_level_e::high;
 
 // Define this to have landscape in the distance rendered in less detail.
 //#define REDUCED_DISTANCE_DETAIL
@@ -179,8 +179,8 @@ void kr_draw_landscape(const image_s &heightmap, const image_s &texmap,
                         }
 
                         // Move the ray to the next voxel.
-                        const uint extraSteps = ((DETAIL_LEVEL == detail_level_e::HIGH)? 0 :
-                                                (DETAIL_LEVEL == detail_level_e::MID)? (rayDepth / 1000) : (rayDepth / 100));
+                        const uint extraSteps = ((DETAIL_LEVEL == detail_level_e::high)? 0 :
+                                                 (DETAIL_LEVEL == detail_level_e::mid)? (rayDepth / 1000) : (rayDepth / 100));
                         ray.pos += ray.dir*(extraSteps + 1);
                         rayDepth += extraSteps;
                     }
