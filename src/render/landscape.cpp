@@ -16,14 +16,6 @@
 #include "../../src/render.h"
 #include "../../src/image.h"
 
-/*
- * TODOS:
- *
- * - there's some flickering of voxels in the distance when using reduced distance
- *   detail.
- *
- */
-
 // The maximum number of steps from the camera that rays are traced. If the ray
 // exceeds the bounds of the heightmap, it'll be wrapped around it.
 static const uint MAX_RAY_LENGTH = 1000000;
@@ -39,7 +31,8 @@ struct ray_s
     vector3_s dir;
 };
 
-void kr_draw_landscape(const image_s &heightmap, const image_s &texmap,
+void kr_draw_landscape(const image_s &heightmap,
+                       const image_s &texmap,
                        const camera_s &camera,
                        framebuffer_s *const frameBuffer)
 {
@@ -49,7 +42,7 @@ void kr_draw_landscape(const image_s &heightmap, const image_s &texmap,
              "The heightmap must have the same resolution as the texture map.");
 
     const real aspectRatio = (frameBuffer->width() / real(frameBuffer->height()));
-    const real tanFov = tanf((camera.fov / 2.0) * (M_PI / 180.0));
+    const real tanFov = tan((camera.fov / 2.0) * (M_PI / 180.0));
 
     const Matrix44 cameraViewMatrix = RotationMatrix(0, camera.orientation.y, 0) * RotationMatrix(camera.orientation.x, 0, 0);
 
@@ -75,12 +68,11 @@ void kr_draw_landscape(const image_s &heightmap, const image_s &texmap,
                 // Direct the ray toward the current screen pixel, taking into
                 // consideration the orientation of the camera.
                 {
+                    real perspectiveCorrection = std::max(0.01, acos(vector3_s(screenPlaneX, 0, camera.zoom).dot(vector3_s(0, 0, camera.zoom))));
+                    vector3_s view = (vector3_s(screenPlaneX, screenPlaneY, camera.zoom) * cameraViewMatrix);
+
                     ray.pos = camera.pos;
-
-                    vector3_s v = vector3_s(screenPlaneX, screenPlaneY, camera.zoom);
-                    v *= cameraViewMatrix;
-
-                    ray.dir = v.normalized();
+                    ray.dir = (view.normalized() * perspectiveCorrection);
                 }
 
                 // Move the ray up to where the previous ray terminated.
@@ -93,7 +85,7 @@ void kr_draw_landscape(const image_s &heightmap, const image_s &texmap,
                         rayDepth = 0;
                     }
 
-                    ray.pos += (ray.dir * rayDepth);  /// TODO. Scale ray distance by view angle.
+                    ray.pos += (ray.dir * rayDepth);
 
                     // Wrap the ray around the edges of the heightmap, if needed.
                     ray.pos.x = ((ray.pos.x / heightmap.width() - floor(ray.pos.x / heightmap.width())) * heightmap.width());
@@ -134,22 +126,10 @@ void kr_draw_landscape(const image_s &heightmap, const image_s &texmap,
 
                         // Wrap rays around the map at the edges, so we get an infinity-
                         // like effect.
-                        if (ray.pos.z < 0)
-                        {
-                            ray.pos.z = (heightmap.height() - 1);
-                        }
-                        else if (ray.pos.z > (heightmap.height() - 1))
-                        {
-                            ray.pos.z = 0;
-                        }
-                        if (ray.pos.x < 0)
-                        {
-                            ray.pos.x = (heightmap.width() - 1);
-                        }
-                        else if (ray.pos.x > (heightmap.width() - 1))
-                        {
-                            ray.pos.x = 0;
-                        }
+                        if      (ray.pos.z < 0)                        ray.pos.z = (heightmap.height() - 1);
+                        else if (ray.pos.z > (heightmap.height() - 1)) ray.pos.z = 0;
+                        if      (ray.pos.x < 0)                        ray.pos.x = (heightmap.width() - 1);
+                        else if (ray.pos.x > (heightmap.width() - 1))  ray.pos.x = 0;
 
                         const uint rayXPos = (ray.pos.x);
                         const uint rayYPos = (ray.pos.z);
@@ -181,7 +161,7 @@ void kr_draw_landscape(const image_s &heightmap, const image_s &texmap,
                         // Move the ray to the next voxel.
                         const uint extraSteps = ((DETAIL_LEVEL == detail_level_e::high)? 0 :
                                                  (DETAIL_LEVEL == detail_level_e::mid)? (rayDepth / 1000) : (rayDepth / 100));
-                        ray.pos += ray.dir*(extraSteps + 1);
+                        ray.pos += (ray.dir * (extraSteps + 1));
                         rayDepth += extraSteps;
                     }
                 }
@@ -208,7 +188,7 @@ void kr_draw_landscape(const image_s &heightmap, const image_s &texmap,
                     color_rgba_s horizonColor = {125, 145, 175, 255};
 
                     // The amount by which to scale the base horizon color when
-                    // taking into consideration the direction of the 5amera.
+                    // taking into consideration the direction of the camera.
                     u8 scaledColor = floor(190 * rayHeight*1.1);
                     if (scaledColor > 115) scaledColor = 115;
                     color_rgba_s scaledHorizonColor = {scaledColor, scaledColor, scaledColor, 255};
