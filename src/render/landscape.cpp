@@ -147,22 +147,23 @@ void kr_draw_landscape(const image_s &heightmap,
 
                         // Wrap rays around the map at the edges, so we get an infinity-
                         // like effect.
-                        if      (ray.pos.z < 0)                        ray.pos.z = (heightmap.height() - 1);
-                        else if (ray.pos.z > (heightmap.height() - 1)) ray.pos.z = 0;
-                        if      (ray.pos.x < 0)                        ray.pos.x = (heightmap.width() - 1);
-                        else if (ray.pos.x > (heightmap.width() - 1))  ray.pos.x = 0;
-
-                        const uint rayXPos = (ray.pos.x);
-                        const uint rayYPos = (ray.pos.z);
+                        if      (ray.pos.z < 1)                         ray.pos.z = (heightmap.height() - 2);
+                        else if (ray.pos.z >= (heightmap.height() - 1)) ray.pos.z = 1;
+                        if      (ray.pos.x < 1)                         ray.pos.x = (heightmap.width() - 2);
+                        else if (ray.pos.x >= (heightmap.width() - 1))  ray.pos.x = 1;
 
                         // Get the height of the voxel that's directly below this ray.
-                        const real voxelHeight = heightmap.pixel_at(rayXPos, rayYPos).r;
+                        real voxelHeight = (rayDepth < 500)
+                                           ? heightmap.interpolated_float_pixel_at(ray.pos.x, ray.pos.z).x
+                                           : heightmap.pixel_at(ray.pos.x, ray.pos.z).r;
 
                         // Draw the voxel if the ray intersects it (i.e. if the voxel
                         // is taller than the ray's current height).
                         if (voxelHeight >= ray.pos.y)
                         {
-                            color_rgba_s color = texmap.pixel_at(rayXPos, rayYPos);
+                            color_rgba_s color = (rayDepth < 1500)
+                                                 ? texmap.interpolated_pixel_at(ray.pos.x, ray.pos.z)
+                                                 : texmap.pixel_at(ray.pos.x, ray.pos.z);
 
                             frameBuffer->canvas->pixel_at(x, frameBuffer->height() - y - 1) = color;
                             frameBuffer->depthmap[x + (frameBuffer->height() - y - 1) * frameBuffer->width()] = rayDepth;
@@ -209,7 +210,7 @@ void kr_draw_landscape(const image_s &heightmap,
 
                     // The amount by which to scale the base horizon color when
                     // taking into consideration the direction of the camera.
-                    u8 scaledColor = floor(190 * rayHeight*1.1);
+                    u8 scaledColor = floor(100 * rayHeight*1.1);
                     if (scaledColor > 115) scaledColor = 115;
                     color_rgba_s scaledHorizonColor = {scaledColor, scaledColor, scaledColor, 255};
 
