@@ -10,6 +10,7 @@
 #include <QImage>
 #include <QColor>
 #include "../../src/memory/memory_interface.h"
+#include "../../src/types.h"
 
 struct image_s
 {
@@ -112,6 +113,36 @@ struct image_s
         k_assert_optional(((x < res.w) && (y < res.h)), "Tried to access an image pixel out of bounds.");
 
         return pixels[(x + y * res.w)];
+    }
+
+    color_rgba_s interpolated_pixel_at(const real x, const real y) const
+    {
+        k_assert_optional(!pixels.is_null(), "Tried to access the pixels of a null image.");
+        k_assert_optional(((x < res.w) && (y < res.h)), "Tried to access an image pixel out of bounds.");
+
+        const uint xFloored = floor(x);
+        const uint yFloored = floor(y);
+        const real xBias = (x - xFloored);
+        const real yBias = (y - yFloored);
+
+        const real r1 = LERP(pixels[(xFloored       + yFloored       * res.w)].r,
+                             pixels[(xFloored       + (yFloored + 1) * res.w)].r, yBias);
+        const real r2 = LERP(pixels[((xFloored + 1) + yFloored       * res.w)].r,
+                             pixels[((xFloored + 1) + (yFloored + 1) * res.w)].r, yBias);
+
+        const real g1 = LERP(pixels[(xFloored       + yFloored       * res.w)].g,
+                             pixels[(xFloored       + (yFloored + 1) * res.w)].g, yBias);
+        const real g2 = LERP(pixels[((xFloored + 1) + yFloored       * res.w)].g,
+                             pixels[((xFloored + 1) + (yFloored + 1) * res.w)].g, yBias);
+
+        const real b1 = LERP(pixels[(xFloored       + yFloored       * res.w)].b,
+                             pixels[(xFloored       + (yFloored + 1) * res.w)].b, yBias);
+        const real b2 = LERP(pixels[((xFloored + 1) + yFloored       * res.w)].b,
+                             pixels[((xFloored + 1) + (yFloored + 1) * res.w)].b, yBias);
+
+        return {LERP(r1, r2, xBias),
+                LERP(g1, g2, xBias),
+                LERP(b1, b2, xBias)};
     }
 
     const u8* pixel_array(void) const
