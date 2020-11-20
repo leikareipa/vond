@@ -54,6 +54,7 @@ void Window::set_canvas_image(const image_s &image)
     k_assert(image.bpp() == 32, "Expected a 32-bit image.");
 
     OGL_SURFACE->upload_canvas_texture(image);
+    OGL_SURFACE->update();
 
     return;
 }
