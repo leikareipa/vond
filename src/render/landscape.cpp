@@ -20,7 +20,28 @@
 // exceeds the bounds of the heightmap, it'll be wrapped around it.
 static const uint MAX_RAY_LENGTH = 1000000;
 
-static enum class detail_level_e { high, mid, low } DETAIL_LEVEL = detail_level_e::high;
+static enum class detail_level_e
+{
+    l0,
+    l25,
+    l50,
+    l75,
+    l100
+} DETAIL_LEVEL = detail_level_e::l50;
+
+static const real PERSPECTIVE_CORRECTION_DETAIL =
+        (DETAIL_LEVEL == detail_level_e::l100)? 0.05
+        : (DETAIL_LEVEL == detail_level_e::l75)? 0.1
+        : (DETAIL_LEVEL == detail_level_e::l50)? 0.2
+        : (DETAIL_LEVEL == detail_level_e::l25)? 0.3
+        : 0.4;
+
+static const real RAY_SKIP_MULTIPLIER =
+        (DETAIL_LEVEL == detail_level_e::l100)? 0.0001
+        : (DETAIL_LEVEL == detail_level_e::l75)? 0.0002
+        : (DETAIL_LEVEL == detail_level_e::l50)? 0.0003
+        : (DETAIL_LEVEL == detail_level_e::l25)? 0.0004
+        : 0.0005;
 
 // Define this to have landscape in the distance rendered in less detail.
 //#define REDUCED_DISTANCE_DETAIL
@@ -54,6 +75,7 @@ void kr_draw_landscape(const image_s &heightmap,
         uint rayDepth = 0;      // How many steps the ray has traced into the current horizontal slice.
 
         const real screenPlaneX = ((2.0 * ((x + 0.5) / frameBuffer->width()) - 1.0) * tanFov * aspectRatio);
+        const real perspectiveCorrection = std::max(PERSPECTIVE_CORRECTION_DETAIL, acos(vector3_s(screenPlaneX, 0, camera.zoom).dot(vector3_s(0, 0, camera.zoom))));
 
         // For each horizontal slice, shoot a ray toward each of the pixels in its
         // vertical column, starting from the bottom of the screen and working up.
@@ -68,7 +90,6 @@ void kr_draw_landscape(const image_s &heightmap,
                 // Direct the ray toward the current screen pixel, taking into
                 // consideration the orientation of the camera.
                 {
-                    real perspectiveCorrection = std::max(0.01, acos(vector3_s(screenPlaneX, 0, camera.zoom).dot(vector3_s(0, 0, camera.zoom))));
                     vector3_s view = (vector3_s(screenPlaneX, screenPlaneY, camera.zoom) * cameraViewMatrix);
 
                     ray.pos = camera.pos;
@@ -107,7 +128,7 @@ void kr_draw_landscape(const image_s &heightmap,
                     // first voxel whose height is greater than the ray's height at that
                     // grid element. Once the ray intersects such a voxel, it'll be drawn
                     // to screen, and tracing for this screen slice ends.
-                    for (; rayDepth < MAX_RAY_LENGTH; (rayDepth++, stepsTaken++))
+                    for (; rayDepth < (MAX_RAY_LENGTH / perspectiveCorrection); stepsTaken++)
                     {
                         // Don't trace rays that are directed upward and above the maximum
                         // height of the terrain.
@@ -159,10 +180,9 @@ void kr_draw_landscape(const image_s &heightmap,
                         }
 
                         // Move the ray to the next voxel.
-                        const uint extraSteps = ((DETAIL_LEVEL == detail_level_e::high)? 0 :
-                                                 (DETAIL_LEVEL == detail_level_e::mid)? (rayDepth / 1000) : (rayDepth / 100));
+                        const uint extraSteps = (rayDepth * RAY_SKIP_MULTIPLIER);
                         ray.pos += (ray.dir * (extraSteps + 1));
-                        rayDepth += extraSteps;
+                        rayDepth += (extraSteps + 1);
                     }
                 }
             }
