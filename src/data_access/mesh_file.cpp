@@ -7,6 +7,8 @@
  *
  */
 
+#if 0
+
 #include <unordered_map>
 #include <fstream>
 #include <vector>
@@ -108,7 +110,7 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                             meshFile.error_if_not((line.params.size() == 1), "Expected one parameters for the material's texture filename.");
 
                             material.texture.alloc(1, "Texture-map image.");
-                            material.texture[0] = image_s(QImage(line.params.at(0).c_str()), "Temporary image object.");
+                            material.texture[0] = image_s(QImage(line.params.at(0).c_str()));
 
                             break;
                         }
@@ -222,3 +224,5 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
 
     return meshTriangles;
 }
+
+#endif

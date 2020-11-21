@@ -77,21 +77,22 @@ int main(void)
 
     DEBUG(("Entering the main loop..."));
     {
-        // Grab room for the render buffers. Note that the resolution given determines
-        // the render resolution, which will then be upscaled to the resolution of the
-        // host window.
-        framebuffer_s framebuffer(320, 200, 32);
+        // The image buffers we'll render into. Note that the resolution determines
+        // the render resolution, which is then upscaled to the resolution of the
+        // window.
+        image_s<u8> pixelmap(320, 200, 32);
+        image_s<double> depthmap(320, 200, 32);
 
         // Load the landscape heightmap and texture map, as well as a polygon object
         // for testing.
         /// TODO: In the future, asset initialization will be handled somewhere other than here.
-        image_s heightmap(QImage("terrain_heightmap.png"), "Terrain heightmap image");
-        image_s texmap(QImage("terrain_texture.png"), "Terrain texturemap image");
-        std::vector<triangle_s> tris2 = kmesh_mesh_triangles("untitled.vmf");
+        image_s<double> heightmap(QImage("terrain_heightmap.png"));
+        image_s<u8> texture(QImage("terrain_texture.png"));
+        //std::vector<triangle_s> tris2 = kmesh_mesh_triangles("untitled.vmf");
 
         /// TODO: In the future, camera initialization will be handled somewhere other than here.
         camera_s camera;
-        camera.pos = {512, 160, 512};
+        camera.pos = {512, 260, 512};
         camera.orientation = {0.5, -0.3, 0};
         camera.zoom = 1;
         camera.fov = 70;
@@ -108,7 +109,7 @@ int main(void)
 
             // Prepare for the new frame.
             {
-                krend_clear_framebuffer(&framebuffer);
+                depthmap.fill({std::numeric_limits<double>::max()});
                 ktext_clear_ui_text_entries();
                 kinput_reset_input_state();
             }
@@ -119,15 +120,15 @@ int main(void)
 
                 kd_update_input(&camera);
 
-                kr_draw_landscape(heightmap, texmap, camera, &framebuffer);
-                kr_draw_triangles(tris2, camera, &framebuffer);
+                kr_draw_landscape(heightmap, texture, pixelmap, depthmap, camera);
+               // kr_draw_triangles(tris2, camera, &framebuffer);
 
                 renderTime = tim.elapsed();
             }
 
             // Paint the new frame to screen.
             {
-                kd_update_display(*framebuffer.canvas);
+                kd_update_display(pixelmap);
 
                 totalTime = tim.elapsed();
             }

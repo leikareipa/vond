@@ -8,9 +8,13 @@
 #define RENDER_LANDSCAPE_H
 
 struct camera_s;
-class framebuffer_s;
-class image_s;
 
-void kr_draw_landscape(const image_s &heightmap, const image_s &texture, const camera_s &camera, framebuffer_s *const frameBuffer);
+#include "src/image.h"
+
+void kr_draw_landscape(const image_s<double> &srcHeightmap,
+                       const image_s<u8> &srcTexture,
+                       image_s<u8> &dstPixelmap,
+                       image_s<double> &dstDepthmap,
+                       const camera_s &camera);
 
 #endif

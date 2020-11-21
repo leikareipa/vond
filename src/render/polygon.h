@@ -13,15 +13,16 @@
 #include "../../src/vector.h"
 #include "../../src/memory.h"
 
+template <typename T> struct image_s;
+
 class framebuffer_s;
-class image_s;
 struct camera_s;
 
 struct polygon_material_s
 {
     std::string name;
-    heap_bytes_s<image_s> texture;           // If null, baseColor will be used instead.
-    color_rgba_s baseColor;
+    image_s<u8> *texture = nullptr;           // If null, baseColor will be used instead.
+    color_rgba_s<u8> baseColor;
 };
 
 struct vertex4_s

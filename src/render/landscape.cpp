@@ -52,29 +52,31 @@ struct ray_s
     vector3_s<double> dir;
 };
 
-void kr_draw_landscape(const image_s &heightmap,
-                       const image_s &texture,
-                       const camera_s &camera,
-                       framebuffer_s *const frameBuffer)
+void kr_draw_landscape(const image_s<double> &srcHeightmap,
+                       const image_s<u8> &srcTexture,
+                       image_s<u8> &dstPixelmap,
+                       image_s<double> &dstDepthmap,
+                       const camera_s &camera)
 {
-    k_assert(frameBuffer != nullptr,
-             "Was asked to draw the landscape into a null pixel buffer.");
-    k_assert(heightmap.resolution().same_width_height_as(texture.resolution()),
+    k_assert(srcHeightmap.resolution().same_width_height_as(srcTexture.resolution()),
              "The heightmap must have the same resolution as the texture map.");
 
-    const real aspectRatio = (frameBuffer->width() / real(frameBuffer->height()));
+    k_assert(dstPixelmap.resolution().same_width_height_as(dstDepthmap.resolution()),
+             "The pixel map must have the same resolution as the depth map.");
+
+    const real aspectRatio = (dstPixelmap.width() / real(dstPixelmap.height()));
     const real tanFov = tan((camera.fov / 2.0) * (M_PI / 180.0));
     const matrix44_s viewMatrix = (matrix44_rotation_s(0, camera.orientation.y, 0) *
                                    matrix44_rotation_s(camera.orientation.x, 0, 0));
 
     // Loop through each horizontal slice on the screen.
     #pragma omp parallel for
-    for (uint x = 0; x < frameBuffer->width(); x++)
+    for (uint x = 0; x < dstPixelmap.width(); x++)
     {
         uint stepsTaken = 0;    // How many steps we've traced along the current vertical pixel.
         uint rayDepth = 0;      // How many steps the ray has traced into the current horizontal slice.
 
-        const real screenPlaneX = ((2.0 * ((x + 0.5) / frameBuffer->width()) - 1.0) * tanFov * aspectRatio);
+        const real screenPlaneX = ((2.0 * ((x + 0.5) / dstPixelmap.width()) - 1.0) * tanFov * aspectRatio);
         const real perspectiveCorrection = std::max(PERSPECTIVE_CORRECTION_DETAIL,
                                                     acos(vector3_s<double>{screenPlaneX, 0, camera.zoom}.dot(vector3_s<double>{0, 0, camera.zoom})));
 
@@ -82,9 +84,9 @@ void kr_draw_landscape(const image_s &heightmap,
         // vertical column, starting from the bottom of the screen and working up.
         {
             uint y = 0;
-            for (; y < frameBuffer->height(); y++)
+            for (; y < dstPixelmap.height(); y++)
             {
-                const real screenPlaneY = ((2.0 * ((y + 0.5) / frameBuffer->height()) - 1.0) * tanFov);
+                const real screenPlaneY = ((2.0 * ((y + 0.5) / dstPixelmap.height()) - 1.0) * tanFov);
 
                 ray_s ray;
 
@@ -110,8 +112,8 @@ void kr_draw_landscape(const image_s &heightmap,
                     ray.pos += (ray.dir * rayDepth);
 
                     // Wrap the ray around the edges of the heightmap, if needed.
-                    ray.pos.x = ((ray.pos.x / heightmap.width() - floor(ray.pos.x / heightmap.width())) * heightmap.width());
-                    ray.pos.z = ((ray.pos.z / heightmap.height() - floor(ray.pos.z / heightmap.height())) * heightmap.height());
+                    ray.pos.x = ((ray.pos.x / srcHeightmap.width() - floor(ray.pos.x / srcHeightmap.width())) * srcHeightmap.width());
+                    ray.pos.z = ((ray.pos.z / srcHeightmap.height() - floor(ray.pos.z / srcHeightmap.height())) * srcHeightmap.height());
 
                     stepsTaken = 0;
                 }
@@ -148,33 +150,33 @@ void kr_draw_landscape(const image_s &heightmap,
 
                         // Wrap rays around the map at the edges, so we get an infinity-
                         // like effect.
-                        if      (ray.pos.z < 1)                         ray.pos.z = (heightmap.height() - 2);
-                        else if (ray.pos.z >= (heightmap.height() - 1)) ray.pos.z = 1;
-                        if      (ray.pos.x < 1)                         ray.pos.x = (heightmap.width() - 2);
-                        else if (ray.pos.x >= (heightmap.width() - 1))  ray.pos.x = 1;
+                        if      (ray.pos.z < 1)                         ray.pos.z = (srcHeightmap.height() - 2);
+                        else if (ray.pos.z >= (srcHeightmap.height() - 1)) ray.pos.z = 1;
+                        if      (ray.pos.x < 1)                         ray.pos.x = (srcHeightmap.width() - 2);
+                        else if (ray.pos.x >= (srcHeightmap.width() - 1))  ray.pos.x = 1;
 
                         // Get the height of the voxel that's directly below this ray.
                         real voxelHeight = (rayDepth < 500)
-                                           ? heightmap.interpolated_float_pixel_at(ray.pos.x, ray.pos.z).x
-                                           : heightmap.pixel_at(ray.pos.x, ray.pos.z).r;
+                                           ? srcHeightmap.interpolated_pixel_at(ray.pos.x, ray.pos.z).r
+                                           : srcHeightmap.pixel_at(ray.pos.x, ray.pos.z).r;
 
                         // Draw the voxel if the ray intersects it (i.e. if the voxel
                         // is taller than the ray's current height).
                         if (voxelHeight >= ray.pos.y)
                         {
-                            color_rgba_s color = (rayDepth < 1500)
-                                                 ? texture.interpolated_pixel_at(ray.pos.x, ray.pos.z)
-                                                 : texture.pixel_at(ray.pos.x, ray.pos.z);
+                            auto color = (rayDepth < 1500)
+                                          ? srcTexture.interpolated_pixel_at(ray.pos.x, ray.pos.z)
+                                          : srcTexture.pixel_at(ray.pos.x, ray.pos.z);
 
-                            frameBuffer->canvas->pixel_at(x, frameBuffer->height() - y - 1) = color;
-                            frameBuffer->depthmap[x + (frameBuffer->height() - y - 1) * frameBuffer->width()] = rayDepth;
+                            dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
+                            dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {double(rayDepth)};
 
                             #ifdef REDUCED_DISTANCE_DETAIL
                                 // For reduced resolution, draw this pixel double-wide.
-                                if ((rayDepth > 2000) && (x % 2 != 0) && (x < (frameBuffer->width() - 1)))
+                                if ((rayDepth > 2000) && (x % 2 != 0) && (x < (dstPixelmap.width() - 1)))
                                 {
-                                    frameBuffer->canvas->pixel_at((x + 1), frameBuffer->height() - y - 1) = color;
-                                    frameBuffer->depthmap[(x + 1) + (frameBuffer->height() - y - 1) * frameBuffer->width()] = rayDepth;
+                                    dstPixelmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = color;
+                                    dstDepthmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = {rayDepth};
                                 }
                             #endif
 
@@ -192,11 +194,11 @@ void kr_draw_landscape(const image_s &heightmap,
             // Draw the sky for the rest of this screen slice's height.
             draw_sky:
             {
-                for (; y < frameBuffer->height(); y++)
+                for (; y < dstPixelmap.height(); y++)
                 {
                     ray_s ray;
 
-                    const real screenPlaneY = (2.0 * ((y + 0.5) / frameBuffer->height()) - 1.0) * tanFov;
+                    const real screenPlaneY = (2.0 * ((y + 0.5) / dstPixelmap.height()) - 1.0) * tanFov;
 
                     vector3_s<double> v = vector3_s<double>{screenPlaneX, screenPlaneY, camera.zoom};
                     v *= viewMatrix;
@@ -207,28 +209,30 @@ void kr_draw_landscape(const image_s &heightmap,
                     real rayHeight = abs(ray.dir.dot(vector3_s<double>{0, 1, 0}));
 
                     // The base horizon color when looking directly into the horizon.
-                    color_rgba_s horizonColor = {125, 145, 175, 255};
+                    color_rgba_s<u8> horizonColor = {125, 145, 175, 255};
 
                     // The amount by which to scale the base horizon color when
                     // taking into consideration the direction of the camera.
                     u8 scaledColor = floor(100 * rayHeight*1.1);
                     if (scaledColor > 115) scaledColor = 115;
-                    color_rgba_s scaledHorizonColor = {scaledColor, scaledColor, scaledColor, 255};
+                    color_rgba_s<u8> scaledHorizonColor = {scaledColor, scaledColor, scaledColor, 255};
 
-                    color_rgba_s c = {u8(horizonColor.r - scaledHorizonColor.r),
-                                      u8(horizonColor.g - scaledHorizonColor.g),
-                                      u8(horizonColor.b - scaledHorizonColor.b),
-                                      255};
+                    const color_rgba_s<u8> color = {u8(horizonColor.r - scaledHorizonColor.r),
+                                                    u8(horizonColor.g - scaledHorizonColor.g),
+                                                    u8(horizonColor.b - scaledHorizonColor.b),
+                                                    255};
 
-                    frameBuffer->canvas->pixel_at(x, frameBuffer->height() - y - 1) = c;
-                    frameBuffer->depthmap[x + (frameBuffer->height() - y - 1) * frameBuffer->width()] = ~0u;
+                    const double depth = std::numeric_limits<double>::max();
+
+                    dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
+                    dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth};
 
                     #ifdef REDUCED_DISTANCE_DETAIL
                         // For reduced resolution, draw this pixel double-wide.
-                        if ((rayDepth > 0) && (x % 2 != 0) && (x < (frameBuffer->width() - 1)))
+                        if ((rayDepth > 0) && (x % 2 != 0) && (x < (dstPixelmap.width() - 1)))
                         {
-                            frameBuffer->canvas->pixel_at((x + 1), frameBuffer->height() - y - 1) = c;
-                            frameBuffer->depthmap[(x + 1) + (frameBuffer->height() - y - 1) * frameBuffer->width()] = ~0u;
+                            dstPixelmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = color;
+                            dstDepthmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = {depth};
                         }
                     #endif
                 }

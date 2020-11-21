@@ -49,7 +49,7 @@ Window::~Window()
     return;
 }
 
-void Window::set_canvas_image(const image_s &image)
+void Window::set_canvas_image(const image_s<u8> &image)
 {
     k_assert(image.bpp() == 32, "Expected a 32-bit image.");
 

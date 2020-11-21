@@ -15,6 +15,7 @@
 #include "../../../src/display/w_opengl.h"
 #include "../../../src/display.h"
 #include "../../../src/render.h"
+#include "../../../src/image.h"
 #include "../../../src/ui.h"
 
 OGLWidget::OGLWidget(QWidget *parent) : QOpenGLWidget(parent)
@@ -87,7 +88,7 @@ void OGLWidget::paintGL()
     return;
 }
 
-void OGLWidget::upload_canvas_texture(const image_s &image)
+void OGLWidget::upload_canvas_texture(const image_s<u8> &image)
 {
     this->glBindTexture(GL_TEXTURE_2D, frameBufferTextureIdx);
     this->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, image.width(), image.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, image.pixel_array());

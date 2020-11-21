@@ -15,12 +15,11 @@
 
 #include "../src/types.h"
 
-#pragma pack(push, 1)
-    struct color_rgba_s
-    {
-        u8 r, g, b, a;
-    };
-#pragma pack(pop)
+template <typename T>
+struct color_rgba_s
+{
+    T r, g, b, a;
+};
 
 struct resolution_s
 {
@@ -34,7 +33,7 @@ struct resolution_s
 
 #define NUM_ELEMENTS(array) int((sizeof(array) / sizeof((array)[0])))
 
-#define LERP(x, y, step)    ((x) + ((step) * ((y) - (x))))
+#define LERP(x, y, step) ((x) + ((step) * ((y) - (x))))
 
 #define k_assert(condition, error_string)   assert(condition && error_string);
 

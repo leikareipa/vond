@@ -12,7 +12,7 @@
 #include <QWidget>
 #include "../../../src/types.h"
 
-class image_s;
+template <typename T> struct image_s;
 
 class OGLWidget : public QOpenGLWidget, protected QOpenGLFunctions
 {
@@ -21,7 +21,7 @@ class OGLWidget : public QOpenGLWidget, protected QOpenGLFunctions
 public:
     explicit OGLWidget(QWidget *parent = 0);
 
-    void upload_canvas_texture(const image_s &image);
+    void upload_canvas_texture(const image_s<u8> &image);
 
 protected:
     void initializeGL();

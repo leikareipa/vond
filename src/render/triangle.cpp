@@ -6,6 +6,8 @@
  *
  */
 
+#if 0
+
 #include <cmath>
 #include "../../src/matrix44.h"
 #include "../../src/camera.h"
@@ -131,15 +133,15 @@ static void rs_fill_tri_row(const uint row,
     uint screenPixIdx = startX + row * framebuffer->width();
 
     // Solid fill.
-    if (triangleMaterial().texture.is_null())
+    if (!triangleMaterial().texture)
     {
-        const color_rgba_s color = triangleMaterial().baseColor;
+        const color_rgba_s<u8> color = triangleMaterial().baseColor;
 
         for (int x = startX; x <= endX; x++)
         {
             if (framebuffer->depthmap[screenPixIdx] > leftDepth)
             {
-                framebuffer->canvas->pixel_at(x, row) = color;
+                framebuffer->canvas.pixel_at(x, row) = color;
                 framebuffer->depthmap[screenPixIdx] = leftDepth;
             }
 
@@ -152,13 +154,13 @@ static void rs_fill_tri_row(const uint row,
     {
         for (int x = startX; x <= endX; x++)
         {
-            const uint u = (leftU * triangleMaterial().texture[0].width());
-            const uint v = (leftV * triangleMaterial().texture[0].height());
-            const color_rgba_s color = triangleMaterial().texture[0].pixel_at(u, v);
+            const uint u = (leftU * triangleMaterial().texture->width());
+            const uint v = (leftV * triangleMaterial().texture->height());
+            const color_rgba_s<u8> color = triangleMaterial().texture->pixel_at(u, v);
 
             if (framebuffer->depthmap[screenPixIdx] > leftDepth)
             {
-                framebuffer->canvas->pixel_at(x, row) = color;
+                framebuffer->canvas.pixel_at(x, row) = color;
                 framebuffer->depthmap[screenPixIdx] = leftDepth;
             }
 
@@ -365,3 +367,5 @@ void kr_draw_triangles(const std::vector<triangle_s> &triangles,
 
     return;
 }
+
+#endif

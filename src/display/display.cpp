@@ -33,7 +33,7 @@ namespace app_n
     static QApplication *const APP = new QApplication(ARGC, &ARGV);
 }
 
-void kd_update_display(const image_s &frameBufferCanvas)
+void kd_update_display(const image_s<u8> &pixelmap)
 {
     static u32 fpsCnt = 0;
 
@@ -51,7 +51,7 @@ void kd_update_display(const image_s &frameBufferCanvas)
         fpsTimer.restart();
     }
 
-    WINDOW->set_canvas_image(frameBufferCanvas);
+    WINDOW->set_canvas_image(pixelmap);
     WINDOW->update();
 
     // Spin the event loop manually, relying on OpenGL's refresh block to keep us

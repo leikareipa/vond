@@ -11,7 +11,7 @@
 #include "../../src/vector.h"
 #include "../../src/types.h"
 
-class image_s;
+template <typename T> struct image_s;
 
 class Window : public QWidget
 {
@@ -21,7 +21,7 @@ public:
     Window(const uint width, const uint height, const char *const title);
     ~Window();
 
-    void set_canvas_image(const image_s &image);
+    void set_canvas_image(const image_s<u8> &image);
 
     vector2_s<int> mouse_move_delta();
 
