@@ -30,7 +30,7 @@ struct vertex4_s
     real depth = 0;
     real uv[2] = {0, 0};
 
-    void transform(const Matrix44 &mat)
+    void transform(const matrix44_s &mat)
     {
         const decltype(this->x) x0 = ((mat.elements[0] * this->x) + (mat.elements[4] * this->y) + (mat.elements[8] * this->z) + (mat.elements[12] * this->w));
         const decltype(this->y) y0 = ((mat.elements[1] * this->x) + (mat.elements[5] * this->y) + (mat.elements[9] * this->z) + (mat.elements[13] * this->w));

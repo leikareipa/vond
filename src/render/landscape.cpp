@@ -48,24 +48,24 @@ static const real RAY_SKIP_MULTIPLIER =
 
 struct ray_s
 {
-    vector3_s pos;
-    vector3_s dir;
+    vector3_s<double> pos;
+    vector3_s<double> dir;
 };
 
 void kr_draw_landscape(const image_s &heightmap,
-                       const image_s &texmap,
+                       const image_s &texture,
                        const camera_s &camera,
                        framebuffer_s *const frameBuffer)
 {
     k_assert(frameBuffer != nullptr,
              "Was asked to draw the landscape into a null pixel buffer.");
-    k_assert(heightmap.resolution().same_width_height_as(texmap.resolution()),
+    k_assert(heightmap.resolution().same_width_height_as(texture.resolution()),
              "The heightmap must have the same resolution as the texture map.");
 
     const real aspectRatio = (frameBuffer->width() / real(frameBuffer->height()));
     const real tanFov = tan((camera.fov / 2.0) * (M_PI / 180.0));
-
-    const Matrix44 cameraViewMatrix = RotationMatrix(0, camera.orientation.y, 0) * RotationMatrix(camera.orientation.x, 0, 0);
+    const matrix44_s viewMatrix = (matrix44_rotation_s(0, camera.orientation.y, 0) *
+                                   matrix44_rotation_s(camera.orientation.x, 0, 0));
 
     // Loop through each horizontal slice on the screen.
     #pragma omp parallel for
@@ -75,7 +75,8 @@ void kr_draw_landscape(const image_s &heightmap,
         uint rayDepth = 0;      // How many steps the ray has traced into the current horizontal slice.
 
         const real screenPlaneX = ((2.0 * ((x + 0.5) / frameBuffer->width()) - 1.0) * tanFov * aspectRatio);
-        const real perspectiveCorrection = std::max(PERSPECTIVE_CORRECTION_DETAIL, acos(vector3_s(screenPlaneX, 0, camera.zoom).dot(vector3_s(0, 0, camera.zoom))));
+        const real perspectiveCorrection = std::max(PERSPECTIVE_CORRECTION_DETAIL,
+                                                    acos(vector3_s<double>{screenPlaneX, 0, camera.zoom}.dot(vector3_s<double>{0, 0, camera.zoom})));
 
         // For each horizontal slice, shoot a ray toward each of the pixels in its
         // vertical column, starting from the bottom of the screen and working up.
@@ -90,7 +91,7 @@ void kr_draw_landscape(const image_s &heightmap,
                 // Direct the ray toward the current screen pixel, taking into
                 // consideration the orientation of the camera.
                 {
-                    vector3_s view = (vector3_s(screenPlaneX, screenPlaneY, camera.zoom) * cameraViewMatrix);
+                    const vector3_s<double> view = (vector3_s<double>{screenPlaneX, screenPlaneY, camera.zoom} * viewMatrix);
 
                     ray.pos = camera.pos;
                     ray.dir = (view.normalized() * perspectiveCorrection);
@@ -162,8 +163,8 @@ void kr_draw_landscape(const image_s &heightmap,
                         if (voxelHeight >= ray.pos.y)
                         {
                             color_rgba_s color = (rayDepth < 1500)
-                                                 ? texmap.interpolated_pixel_at(ray.pos.x, ray.pos.z)
-                                                 : texmap.pixel_at(ray.pos.x, ray.pos.z);
+                                                 ? texture.interpolated_pixel_at(ray.pos.x, ray.pos.z)
+                                                 : texture.pixel_at(ray.pos.x, ray.pos.z);
 
                             frameBuffer->canvas->pixel_at(x, frameBuffer->height() - y - 1) = color;
                             frameBuffer->depthmap[x + (frameBuffer->height() - y - 1) * frameBuffer->width()] = rayDepth;
@@ -197,13 +198,13 @@ void kr_draw_landscape(const image_s &heightmap,
 
                     const real screenPlaneY = (2.0 * ((y + 0.5) / frameBuffer->height()) - 1.0) * tanFov;
 
-                    vector3_s v = vector3_s(screenPlaneX, screenPlaneY, camera.zoom);
-                    v *= cameraViewMatrix;
+                    vector3_s<double> v = vector3_s<double>{screenPlaneX, screenPlaneY, camera.zoom};
+                    v *= viewMatrix;
 
                     // Aim the ray at this pixel.
                     ray.dir = v.normalized();
 
-                    real rayHeight = fabs(ray.dir.dot(vector3_s(0, 1, 0)));
+                    real rayHeight = abs(ray.dir.dot(vector3_s<double>{0, 1, 0}));
 
                     // The base horizon color when looking directly into the horizon.
                     color_rgba_s horizonColor = {125, 145, 175, 255};

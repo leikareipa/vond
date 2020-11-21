@@ -22,23 +22,23 @@ std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &trian
                                             const camera_s &camera)
 {
     // Create a matrix by which we can transform the triangles into screen-space.
-    Matrix44 toClipSpace;
+    matrix44_s toClipSpace;
     {
-        const vector3_s objectPos = {500, 120, 500};
+        const vector3_s<double> objectPos = {500, 120, 500};
 
-        const Matrix44 cameraMatrix = RotationMatrix(-camera.orientation.x, -camera.orientation.y, camera.orientation.z) *
-                                      TranslationMatrix(-camera.pos.x, -camera.pos.y, -camera.pos.z) *
-                                      TranslationMatrix(objectPos.x, objectPos.y, objectPos.z);
+        const matrix44_s cameraMatrix = matrix44_rotation_s(-camera.orientation.x, -camera.orientation.y, camera.orientation.z) *
+                                        matrix44_translation_s(-camera.pos.x, -camera.pos.y, -camera.pos.z) *
+                                        matrix44_translation_s(objectPos.x, objectPos.y, objectPos.z);
 
-        const Matrix44 perspectiveMatrix = PerspectiveMatrix(DEG_TO_RAD(camera.fov),
-                                                             (real(framebuffer.width()) / framebuffer.height()),
-                                                             Z_NEAR, Z_FAR);
+        const matrix44_s perspectiveMatrix = matrix44_perspective_s(DEG_TO_RAD(camera.fov),
+                                                                    (real(framebuffer.width()) / framebuffer.height()),
+                                                                    Z_NEAR, Z_FAR);
 
         toClipSpace = perspectiveMatrix * cameraMatrix;
     }
 
-    const Matrix44 toScreenSpace = ScreenSpaceMatrix((framebuffer.width() / 2.0),
-                                                     (framebuffer.height() / 2.0));
+    const matrix44_s toScreenSpace = matrix44_screen_space_s((framebuffer.width() / 2.0),
+                                                             (framebuffer.height() / 2.0));
 
 
     // Transform the triangles.

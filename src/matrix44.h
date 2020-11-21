@@ -39,22 +39,12 @@
 #include <cmath>
 #include "../src/common.h"
 
-struct Matrix44
+struct matrix44_s
 {
-    real elements[4 * 4];
-    const uint sideLen = 4;
+    static const uint sideLen = 4;
+    real elements[sideLen * sideLen];
 
-    void operator=(const Matrix44 &source)
-    {
-        for (uint i = 0; i < (sideLen * sideLen); i++)
-        {
-            this->elements[i] = source.elements[i];
-        }
-
-        return;
-    }
-
-    void operator*=(const Matrix44 &other)
+    void operator*=(const matrix44_s &other)
     {
         for(uint i = 0; i < sideLen; i++)
         {
@@ -70,9 +60,9 @@ struct Matrix44
         return;
     }
 
-    Matrix44 operator*(const Matrix44 &other) const
+    matrix44_s operator*(const matrix44_s &other) const
     {
-        Matrix44 m;
+        matrix44_s m;
 
         for(uint i = 0; i < sideLen; i++)
         {
@@ -100,9 +90,9 @@ struct Matrix44
 
 };
 
-struct IdentityMatrix : public Matrix44
+struct matrix44_identity_s : public matrix44_s
 {
-    IdentityMatrix()
+    matrix44_identity_s()
     {
         elements[0] = 1;	elements[4] = 0;	elements[8]  = 0;	elements[12] = 0;
         elements[1] = 0;	elements[5] = 1;	elements[9]  = 0;	elements[13] = 0;
@@ -111,11 +101,11 @@ struct IdentityMatrix : public Matrix44
     }
 };
 
-struct RotationMatrix : public Matrix44
+struct matrix44_rotation_s : public matrix44_s
 {
-    RotationMatrix(real x, real y, real z)
+    matrix44_rotation_s(real x, real y, real z)
     {
-        Matrix44 rx, ry, rz;
+        matrix44_s rx, ry, rz;
 
         rx.elements[0] = 1;             rx.elements[4] = 0;              rx.elements[8]  = 0;                 rx.elements[12] = 0;
         rx.elements[1] = 0;             rx.elements[5] = (real)cos(x);	 rx.elements[9]  = -(real)sin(x);     rx.elements[13] = 0;
@@ -143,9 +133,9 @@ struct RotationMatrix : public Matrix44
     }
 };
 
-struct TranslationMatrix : public Matrix44
+struct matrix44_translation_s : public matrix44_s
 {
-    TranslationMatrix(real x, real y, real z)
+    matrix44_translation_s(real x, real y, real z)
     {
         elements[0] = 1;	elements[4] = 0;	elements[8]  = 0;	elements[12] = x;
         elements[1] = 0;	elements[5] = 1;	elements[9]  = 0;	elements[13] = y;
@@ -154,9 +144,9 @@ struct TranslationMatrix : public Matrix44
     }
 };
 
-struct PerspectiveMatrix : public Matrix44
+struct matrix44_perspective_s : public matrix44_s
 {
-    PerspectiveMatrix(real fov, real aspectRatio, real zNear, real zFar)
+    matrix44_perspective_s(real fov, real aspectRatio, real zNear, real zFar)
     {
         real tanHalfFOV = tan(fov / 2);
         real zRange = zNear - zFar;
@@ -168,9 +158,9 @@ struct PerspectiveMatrix : public Matrix44
     }
 };
 
-struct ScalingMatrix : public Matrix44
+struct matrix44_scaling_s : public matrix44_s
 {
-    ScalingMatrix(real x, real y, real z)
+    matrix44_scaling_s(real x, real y, real z)
     {
         elements[0] = x;	elements[4] = 0;	elements[8]  = 0;	elements[12] = 0;
         elements[1] = 0;	elements[5] = y;	elements[9]  = 0;	elements[13] = 0;
@@ -179,9 +169,9 @@ struct ScalingMatrix : public Matrix44
     }
 };
 
-struct ScreenSpaceMatrix : public Matrix44
+struct matrix44_screen_space_s : public matrix44_s
 {
-    ScreenSpaceMatrix(real halfWidth, real halfHeight)
+    matrix44_screen_space_s(real halfWidth, real halfHeight)
     {
         elements[0] = halfWidth;	elements[4] = 0;            elements[8]  = 0;	elements[12] = halfWidth - 0.5;
         elements[1] = 0;            elements[5] = -halfHeight;	elements[9]  = 0;	elements[13] = halfHeight - 0.5;

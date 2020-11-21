@@ -11,6 +11,6 @@ struct camera_s;
 class framebuffer_s;
 class image_s;
 
-void kr_draw_landscape(const image_s &heightmap, const image_s &texmap, const camera_s &camera, framebuffer_s *const frameBuffer);
+void kr_draw_landscape(const image_s &heightmap, const image_s &texture, const camera_s &camera, framebuffer_s *const frameBuffer);
 
 #endif

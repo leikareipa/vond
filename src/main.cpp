@@ -21,6 +21,7 @@
 #include "../src/camera.h"
 #include "../src/image.h"
 #include "../src/ui.h"
+#include "../src/ui/input.h"
 
 // Set to !0 when the user wants to exit the program.
 static int PROGRAM_EXIT_REQUESTED = 0;
@@ -29,7 +30,7 @@ static void init_system(void)
 {
     DEBUG(("Initializing the program..."));
 
-    kd_acquire_display(1280, 800, "\"Vond\" by Tarpeeksi Hyvae Soft");
+    kd_acquire_display(1600, 1000, "\"Vond\" by Tarpeeksi Hyvae Soft");
 
     return;
 }
@@ -90,10 +91,10 @@ int main(void)
 
         /// TODO: In the future, camera initialization will be handled somewhere other than here.
         camera_s camera;
-        camera.pos = {512, 120, 512};
+        camera.pos = {512, 160, 512};
         camera.orientation = {0.5, -0.3, 0};
         camera.zoom = 1;
-        camera.fov = 65;
+        camera.fov = 70;
 
         while (!PROGRAM_EXIT_REQUESTED)
         {
@@ -136,8 +137,8 @@ int main(void)
             {
                 if (kinput_is_moving_forward())
                 {
-                    vector3_s dir = vector3_s(0, 0, 1);
-                    dir *= RotationMatrix(0, camera.orientation.y, 0) * RotationMatrix(camera.orientation.x, 0, 0);
+                    vector3_s<double> dir = vector3_s<double>{0, 0, 1};
+                    dir *= matrix44_rotation_s(0, camera.orientation.y, 0) * matrix44_rotation_s(camera.orientation.x, 0, 0);
                     dir = dir.normalized();
                     camera.pos.x += dir.x;
                     camera.pos.y += dir.y;
@@ -145,8 +146,8 @@ int main(void)
                 }
                 else if (kinput_is_moving_backward())
                 {
-                    vector3_s dir = vector3_s(0, 0, -1);
-                    dir *= RotationMatrix(0, camera.orientation.y, 0) * RotationMatrix(camera.orientation.x, 0, 0);
+                    vector3_s<double> dir = vector3_s<double>{0, 0, -1};
+                    dir *= matrix44_rotation_s(0, camera.orientation.y, 0) * matrix44_rotation_s(camera.orientation.x, 0, 0);
                     dir = dir.normalized();
                     camera.pos.x += dir.x;
                     camera.pos.y += dir.y;
