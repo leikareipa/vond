@@ -9,6 +9,7 @@
 #ifndef CONFIG_FILE_READ_H
 #define CONFIG_FILE_READ_H
 
+#include <vector>
 #include <fstream>
 
 // A single line (up to \n) in a given txt file, split up into its constituents,

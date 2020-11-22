@@ -7,8 +7,6 @@
  *
  */
 
-#if 0
-
 #include <unordered_map>
 #include <fstream>
 #include <vector>
@@ -72,7 +70,6 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
 
                 // Get the material's properties.
                 polygon_material_s material;
-                //heap_bytes_s<polygon_material_s> material(1);
                 material.baseColor = {127, 127, 127, 255};
                 material.name = materialName;
                 while (!meshFile.file_is_at_end())
@@ -106,11 +103,10 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                         }
                         case 't':       // Texture.
                         {
-                            meshFile.error_if_not((material.texture.is_null()), "Can't re-define the texture for a material.");
+                            meshFile.error_if_not(!material.texture, "Can't re-define the texture for a material.");
                             meshFile.error_if_not((line.params.size() == 1), "Expected one parameters for the material's texture filename.");
 
-                            material.texture.alloc(1, "Texture-map image.");
-                            material.texture[0] = image_s(QImage(line.params.at(0).c_str()));
+                            material.texture = new image_s<u8>(QImage(line.params.at(0).c_str()));
 
                             break;
                         }
@@ -163,9 +159,9 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                             vert.uv[0] = 0;
                             vert.uv[1] = 0;
 
-                            vert.x = std::stoi(line.params.at(0));
-                            vert.y = std::stoi(line.params.at(1));
-                            vert.z = std::stoi(line.params.at(2));
+                            vert.pos.x = std::stoi(line.params.at(0));
+                            vert.pos.y = std::stoi(line.params.at(1));
+                            vert.pos.z = std::stoi(line.params.at(2));
                             vert.w = 1;
                         }
 
@@ -224,5 +220,3 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
 
     return meshTriangles;
 }
-
-#endif

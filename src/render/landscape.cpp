@@ -77,6 +77,7 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
     {
         uint stepsTaken = 0;    // How many steps we've traced along the current vertical pixel.
         uint rayDepth = 0;      // How many steps the ray has traced into the current horizontal slice.
+        double rayDepthF = 0;
 
         const real screenPlaneX = ((2.0 * ((x + 0.5) / dstPixelmap.width()) - 1.0) * tanFov * aspectRatio);
         const real perspectiveCorrection = std::max(PERSPECTIVE_CORRECTION_DETAIL,
@@ -159,7 +160,7 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                                                            ? srcTexture.interpolated_pixel_at(ray.pos.x, ray.pos.z)
                                                            : srcTexture.pixel_at(ray.pos.x, ray.pos.z);
 
-                            const double depth = double(rayDepth);
+                            const double depth = ray.pos.distance_to(camera.pos);
 
                             dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
                             dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth, depth, depth};

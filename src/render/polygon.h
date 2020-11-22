@@ -27,20 +27,21 @@ struct polygon_material_s
 
 struct vertex4_s
 {
-    real x = 0, y = 0, z = 0, w = 1;
-    real depth = 0;
-    real uv[2] = {0, 0};
+    vector3_s<double> pos = {0, 0, 0};
+    double w = 1;
+    double depth = 0;
+    double uv[2] = {0, 0};
 
     void transform(const matrix44_s &mat)
     {
-        const decltype(this->x) x0 = ((mat.elements[0] * this->x) + (mat.elements[4] * this->y) + (mat.elements[8] * this->z) + (mat.elements[12] * this->w));
-        const decltype(this->y) y0 = ((mat.elements[1] * this->x) + (mat.elements[5] * this->y) + (mat.elements[9] * this->z) + (mat.elements[13] * this->w));
-        const decltype(this->z) z0 = ((mat.elements[2] * this->x) + (mat.elements[6] * this->y) + (mat.elements[10] * this->z) + (mat.elements[14] * this->w));
-        const decltype(this->w) w0 = ((mat.elements[3] * this->x) + (mat.elements[7] * this->y) + (mat.elements[11] * this->z) + (mat.elements[15] * this->w));
+        const decltype(this->pos.x) x0 = ((mat.elements[0] * this->pos.x) + (mat.elements[4] * this->pos.y) + (mat.elements[ 8] * this->pos.z) + (mat.elements[12] * this->w));
+        const decltype(this->pos.y) y0 = ((mat.elements[1] * this->pos.x) + (mat.elements[5] * this->pos.y) + (mat.elements[ 9] * this->pos.z) + (mat.elements[13] * this->w));
+        const decltype(this->pos.z) z0 = ((mat.elements[2] * this->pos.x) + (mat.elements[6] * this->pos.y) + (mat.elements[10] * this->pos.z) + (mat.elements[14] * this->w));
+        const decltype(this->w)     w0 = ((mat.elements[3] * this->pos.x) + (mat.elements[7] * this->pos.y) + (mat.elements[11] * this->pos.z) + (mat.elements[15] * this->w));
 
-        this->x = x0;
-        this->y = y0;
-        this->z = z0;
+        this->pos.x = x0;
+        this->pos.y = y0;
+        this->pos.z = z0;
         this->w = w0;
 
         return;
@@ -53,24 +54,9 @@ struct triangle_s
     asset_s<polygon_material_s> material;
 };
 
-void kr_draw_triangles(const std::vector<triangle_s> &triangles, const camera_s &camera, framebuffer_s *const framebuffer);
+void kr_draw_triangles(const std::vector<triangle_s> &triangles,
+                       image_s<u8> &dstPixelmap,
+                       image_s<double> &dstDepthmap,
+                       const camera_s &camera);
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

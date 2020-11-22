@@ -88,7 +88,7 @@ int main(void)
         /// TODO: In the future, asset initialization will be handled somewhere other than here.
         image_s<double> heightmap(QImage("terrain_heightmap.png"));
         image_s<u8> texture(QImage("terrain_texture.png"));
-        //std::vector<triangle_s> tris2 = kmesh_mesh_triangles("untitled.vmf");
+        std::vector<triangle_s> tris2 = kmesh_mesh_triangles("untitled.vmf");
 
         /// TODO: In the future, camera initialization will be handled somewhere other than here.
         camera_s camera;
@@ -121,7 +121,7 @@ int main(void)
                 kd_update_input(&camera);
 
                 kr_draw_landscape(heightmap, texture, pixelmap, depthmap, camera);
-               // kr_draw_triangles(tris2, camera, &framebuffer);
+                kr_draw_triangles(tris2, pixelmap, depthmap, camera);
 
                 renderTime = tim.elapsed();
             }
@@ -129,6 +129,7 @@ int main(void)
             // Paint the new frame to screen.
             {
                 kd_update_display(pixelmap);
+                //kd_update_display(depthmap.as<u8>(0.7));
 
                 totalTime = tim.elapsed();
             }
