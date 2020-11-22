@@ -58,10 +58,12 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                        image_s<double> &dstDepthmap,
                        const camera_s &camera)
 {
-    k_assert(srcHeightmap.resolution().same_width_height_as(srcTexture.resolution()),
+    k_assert((srcHeightmap.width() == srcTexture.width()) &&
+             (srcHeightmap.height() == srcTexture.height()),
              "The heightmap must have the same resolution as the texture map.");
 
-    k_assert(dstPixelmap.resolution().same_width_height_as(dstDepthmap.resolution()),
+    k_assert((dstPixelmap.width() == dstDepthmap.width()) &&
+             (dstPixelmap.height() == dstDepthmap.height()),
              "The pixel map must have the same resolution as the depth map.");
 
     const real aspectRatio = (dstPixelmap.width() / real(dstPixelmap.height()));
@@ -111,10 +113,6 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
 
                     ray.pos += (ray.dir * rayDepth);
 
-                    // Wrap the ray around the edges of the heightmap, if needed.
-                    ray.pos.x = ((ray.pos.x / srcHeightmap.width() - floor(ray.pos.x / srcHeightmap.width())) * srcHeightmap.width());
-                    ray.pos.z = ((ray.pos.z / srcHeightmap.height() - floor(ray.pos.z / srcHeightmap.height())) * srcHeightmap.height());
-
                     stepsTaken = 0;
                 }
 
@@ -148,13 +146,6 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                             }
                         #endif
 
-                        // Wrap rays around the map at the edges, so we get an infinity-
-                        // like effect.
-                        if      (ray.pos.z < 1)                         ray.pos.z = (srcHeightmap.height() - 2);
-                        else if (ray.pos.z >= (srcHeightmap.height() - 1)) ray.pos.z = 1;
-                        if      (ray.pos.x < 1)                         ray.pos.x = (srcHeightmap.width() - 2);
-                        else if (ray.pos.x >= (srcHeightmap.width() - 1))  ray.pos.x = 1;
-
                         // Get the height of the voxel that's directly below this ray.
                         real voxelHeight = (rayDepth < 500)
                                            ? srcHeightmap.interpolated_pixel_at(ray.pos.x, ray.pos.z).r
@@ -164,19 +155,21 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                         // is taller than the ray's current height).
                         if (voxelHeight >= ray.pos.y)
                         {
-                            auto color = (rayDepth < 1500)
-                                          ? srcTexture.interpolated_pixel_at(ray.pos.x, ray.pos.z)
-                                          : srcTexture.pixel_at(ray.pos.x, ray.pos.z);
+                            const color_rgba_s<u8> color = (rayDepth < 1500)
+                                                           ? srcTexture.interpolated_pixel_at(ray.pos.x, ray.pos.z)
+                                                           : srcTexture.pixel_at(ray.pos.x, ray.pos.z);
+
+                            const double depth = double(rayDepth);
 
                             dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
-                            dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {double(rayDepth)};
+                            dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth, depth, depth};
 
                             #ifdef REDUCED_DISTANCE_DETAIL
                                 // For reduced resolution, draw this pixel double-wide.
                                 if ((rayDepth > 2000) && (x % 2 != 0) && (x < (dstPixelmap.width() - 1)))
                                 {
                                     dstPixelmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = color;
-                                    dstDepthmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = {rayDepth};
+                                    dstDepthmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = {depth, depth, depth};
                                 }
                             #endif
 
@@ -225,14 +218,14 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                     const double depth = std::numeric_limits<double>::max();
 
                     dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
-                    dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth};
+                    dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth, depth, depth};
 
                     #ifdef REDUCED_DISTANCE_DETAIL
                         // For reduced resolution, draw this pixel double-wide.
                         if ((rayDepth > 0) && (x % 2 != 0) && (x < (dstPixelmap.width() - 1)))
                         {
                             dstPixelmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = color;
-                            dstDepthmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = {depth};
+                            dstDepthmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = {depth, depth, depth};
                         }
                     #endif
                 }
