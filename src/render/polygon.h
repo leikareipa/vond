@@ -9,9 +9,7 @@
 
 #include <vector>
 #include <string>
-#include "../../src/data_access/asset_store.h"
 #include "../../src/vector.h"
-#include "../../src/memory.h"
 
 template <typename T> struct image_s;
 
@@ -51,7 +49,7 @@ struct vertex4_s
 struct triangle_s
 {
     vertex4_s v[3];
-    asset_s<polygon_material_s> material;
+    polygon_material_s material;
 };
 
 void kr_draw_triangles(const std::vector<triangle_s> &triangles,

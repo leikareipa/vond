@@ -15,8 +15,36 @@
 #define DEG_TO_RAD(deg) ((deg) * (M_PI / 180.0))
 
 // The near and far clipping planes.
-static const real Z_NEAR = 0.1;
-static const real Z_FAR = 1000;
+static const double Z_NEAR = 0.1;
+static const double Z_FAR = 1000;
+
+struct interpolation_params_s
+{
+    double startX;
+    double u;
+    double v;
+    double invW;
+    double depth;
+
+    // Increments all parameters by the given deltas.
+    // Note: Assumes that all params are of type double, and that there are as
+    // many left-side params/deltas as right-side params/deltas.
+    void increment(const interpolation_params_s &deltas, const unsigned times = 1)
+    {
+        const unsigned numParams = (sizeof(interpolation_params_s) / sizeof(double));
+
+        double *val = (double*)this;
+        double *delta = (double*)&deltas;
+
+        for (unsigned i = 0; i < numParams; i++)
+        {
+            *val += (*delta * times);
+
+            val++;
+            delta++;
+        }
+    }
+};
 
 std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &triangles,
                                             const unsigned screenWidth,
@@ -73,7 +101,6 @@ std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &trian
                 continue;
             }
 
-            // Transform to screen space.
             tri.v[0].transform(toScreenSpace);
             tri.v[1].transform(toScreenSpace);
             tri.v[2].transform(toScreenSpace);
@@ -86,15 +113,18 @@ std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &trian
             }
 
             // Cull triangles that are entirely outside the screen.
-            if ((tri.v[0].pos.x < 0 && tri.v[1].pos.x < 0 && tri.v[2].pos.x < 0) ||
-                (tri.v[0].pos.y < 0 && tri.v[1].pos.y < 0 && tri.v[2].pos.y < 0))
             {
-                continue;
-            }
-            if ((tri.v[0].pos.x >= (int)screenWidth && tri.v[1].pos.x >= (int)screenWidth && tri.v[2].pos.x >= (int)screenWidth) ||
-                (tri.v[0].pos.y >= (int)screenHeight && tri.v[1].pos.y >= (int)screenHeight && tri.v[2].pos.y >= (int)screenHeight))
-            {
-                continue;
+                if ((tri.v[0].pos.x < 0 && tri.v[1].pos.x < 0 && tri.v[2].pos.x < 0) ||
+                    (tri.v[0].pos.y < 0 && tri.v[1].pos.y < 0 && tri.v[2].pos.y < 0))
+                {
+                    continue;
+                }
+
+                if ((tri.v[0].pos.x >= (int)screenWidth && tri.v[1].pos.x >= (int)screenWidth && tri.v[2].pos.x >= (int)screenWidth) ||
+                    (tri.v[0].pos.y >= (int)screenHeight && tri.v[1].pos.y >= (int)screenHeight && tri.v[2].pos.y >= (int)screenHeight))
+                {
+                    continue;
+                }
             }
 
             transformedTris.push_back(tri);
@@ -105,81 +135,90 @@ std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &trian
 }
 
 static void rs_fill_tri_row(const uint row,
-                            int startX,
-                            int endX,
-                            real leftU,
-                            real leftV,
-                            real rightU,
-                            real rightV,
-                            real leftDepth,
-                            real rightDepth,
-                            const asset_s<polygon_material_s> &triangleMaterial,
+                            const interpolation_params_s &rowLeftParams,
+                            const interpolation_params_s &rowRightParams,
+                            const polygon_material_s &triangleMaterial,
                             image_s<u8> &dstPixelmap,
                             image_s<double> &dstDepthmap)
 {
-    const real uDelta = ((rightU - leftU) / real((endX - startX) + 1)); // Amount by which to change the u,v coordinates each pixel on the row.
-    const real vDelta = ((rightV - leftV) / real((endX - startX) + 1));
-
-    const real depthDelta = ((rightDepth - leftDepth) / real((endX - startX) + 1));
-
-    // Bounds-check, clip against the screen.
-    if (startX < 0)
-    {
-        // Move the parameters accordingly.
-        const uint diff = abs(startX);
-        leftU += (uDelta * diff);
-        leftV += (vDelta * diff);
-        leftDepth += (depthDelta * diff);
-
-        startX = 0;
-    }
-    if (endX >= int(dstPixelmap.width()))
-    {
-        endX = (dstPixelmap.width() - 1);
-    }
-
-    if (endX < startX)
+    if (rowRightParams.startX < rowLeftParams.startX)
     {
         return;
     }
 
-    uint screenPixIdx = (startX + row * dstPixelmap.width());
+    interpolation_params_s currentParams, endingParams, paramDeltas;
+
+    // Establish interpolation parameters.
+    {
+        currentParams = rowLeftParams;
+        endingParams = rowRightParams;
+
+        const double rowWidth = ((rowRightParams.startX - rowLeftParams.startX) + 1);
+        const auto make_param_deltas = [=](const auto current, const auto end)
+        {
+            return ((end - current) / rowWidth);
+        };
+
+        paramDeltas.u = make_param_deltas(currentParams.u, endingParams.u);
+        paramDeltas.v = make_param_deltas(currentParams.v, endingParams.v);
+        paramDeltas.depth = make_param_deltas(currentParams.depth, endingParams.depth);
+        paramDeltas.invW = make_param_deltas(currentParams.invW, endingParams.invW);
+    }
+
+    // Bounds-check, clip against the screen.
+    if (currentParams.startX < 0)
+    {
+        // Move the parameters accordingly.
+        const uint diff = abs(currentParams.startX);
+        currentParams.u += (paramDeltas.u * diff);
+        currentParams.v += (paramDeltas.v * diff);
+        currentParams.depth += (paramDeltas.depth * diff);
+        currentParams.invW += (paramDeltas.invW * diff);
+        currentParams.startX = 0;
+    }
+    if (endingParams.startX >= int(dstPixelmap.width()))
+    {
+        endingParams.startX = (dstPixelmap.width() - 1);
+    }
+
+    uint screenPixIdx = (currentParams.startX + row * dstPixelmap.width());
 
     // Solid fill.
-    if (!triangleMaterial().texture)
+    if (!triangleMaterial.texture)
     {
-        const color_rgba_s<u8> color = triangleMaterial().baseColor;
+        const color_rgba_s<u8> color = triangleMaterial.baseColor;
 
-        for (int x = startX; x <= endX; x++)
+        for (int x = currentParams.startX; x <= endingParams.startX; x++)
         {
-            if (dstDepthmap.pixel_at(x, row).r > leftDepth)
+            const double depth = (currentParams.depth / currentParams.invW);
+
+            if (dstDepthmap.pixel_at(x, row).r > depth)
             {
                 dstPixelmap.pixel_at(x, row) = color;
-                dstDepthmap.pixel_at(x, row) = {leftDepth, leftDepth, leftDepth};
+                dstDepthmap.pixel_at(x, row) = {depth, depth, depth};
             }
 
-            leftDepth += depthDelta;
+            currentParams.increment(paramDeltas);
             screenPixIdx++;
         }
     }
     // Textured fill.
     else
     {
-        for (int x = startX; x <= endX; x++)
+        for (int x = currentParams.startX; x <= endingParams.startX; x++)
         {
-            const uint u = (leftU * triangleMaterial().texture->width());
-            const uint v = (leftV * triangleMaterial().texture->height());
-            const color_rgba_s<u8> color = triangleMaterial().texture->pixel_at(u, v);
+            const uint u = ((currentParams.u / currentParams.invW) * triangleMaterial.texture->width());
+            const uint v = ((currentParams.v / currentParams.invW) * triangleMaterial.texture->height());
+            const color_rgba_s<u8> color = triangleMaterial.texture->pixel_at(u, v);
+            const double depth = (currentParams.depth / currentParams.invW);
 
-            if (dstDepthmap.pixel_at(x, row).r > leftDepth)
+            if (dstDepthmap.pixel_at(x, row).r >= depth)
             {
                 dstPixelmap.pixel_at(x, row) = color;
-                dstDepthmap.pixel_at(x, row) = {leftDepth, leftDepth, leftDepth};
+                dstDepthmap.pixel_at(x, row) = {depth, depth, depth};
             }
 
-            leftU += uDelta;
-            leftV += vDelta;
-            leftDepth += depthDelta;
+            currentParams.increment(paramDeltas);
             screenPixIdx++;
         }
     }
@@ -195,117 +234,77 @@ static void rs_fill_tri_row(const uint row,
 static void fill_split_triangle(const vertex4_s *peak,
                                 const vertex4_s *base1,
                                 const vertex4_s *base2,
-                                const asset_s<polygon_material_s> &triangleMaterial,
+                                const polygon_material_s &triangleMaterial,
                                 image_s<u8> &dstPixelmap,
                                 image_s<double> &dstDepthmap)
 {
     k_assert((base1->pos.y == base2->pos.y),
              "The software triangle filler was given a malformed triangle. Expected a flat base.");
 
-    int startRow, endRow;                   // The top and bottom y coordinates of the triangle.
-    int triHeight;
-    bool isDownTri = false;                 // Whether the triangle peak is above or below the base, in screen space.
+    // Values to be interpolated vertically as we render the triangle.
+    interpolation_params_s paramsLeft, paramsRight, deltasLeft, deltasRight;
 
-    // We'll fill the triangle in row by row, adjusting the row parameters by
-    // a delta per every time we move down one row.
-    decltype(peak->pos.x) pixLeft, pixRight, dPixLeft, dPixRight;   // A row of pixels defined by its left and right extrema; and deltas for that row.
-    real leftU, leftV, rightU, rightV;      // Texture coordinates for the pixel row.
-    real dLeftU, dLeftV, dRightU, dRightV;  // Deltas for texture coordinates.
-    decltype(peak->pos.x) leftDepth, rightDepth, dLeftDepth, dRightDepth;
+    // Whether the triangle peak is above or below the base, in screen space.
+    bool isDownTri = false;
 
     // Figure out which corner of the base is on the left/right in screen space.
-    const vertex4_s *leftVert, *rightVert;
-    leftVert = base2;
-    rightVert = base1;
+    const vertex4_s *leftVert = base2;
+    const vertex4_s *rightVert = base1;
     if (base1->pos.x < base2->pos.x)
     {
         leftVert = base1;
         rightVert = base2;
     }
 
-    startRow = peak->pos.y;
-    endRow = base1->pos.y;
+    // The top and bottom y coordinates of the triangle.
+    int startRow = peak->pos.y;
+    int endRow = base1->pos.y;
 
     // Detect whether the triangle is the top or bottom half of the split.
     if (startRow > endRow)
     {
-        const int temp = startRow;
-        startRow = endRow;
-        endRow = temp;
+        isDownTri = true;
+
+        std::swap(startRow, endRow);
 
         // Don't draw the base row twice; i.e. skip it for the down-triangle.
         startRow++;
-
-        isDownTri = 1;
     }
     // If the triangle is very thin vertically, don't bother drawing it.
     else if ((startRow == endRow) ||
              (endRow - startRow) <= 0)
     {
         return;
-    }
+    }  
 
-    triHeight = endRow - startRow;
-
-    // Establish row parameters.
-    if (isDownTri)
+    // Establish interpolation parameters.
     {
-        pixLeft = (leftVert->pos.x);
-        pixRight = (rightVert->pos.x);
-        dPixLeft = (peak->pos.x - leftVert->pos.x) / real(triHeight + 1);
-        dPixRight = (peak->pos.x - rightVert->pos.x) / real(triHeight + 1);
+        const double triHeight = ((endRow - startRow) + 1);
+        const auto make_params = [=](const auto start, const auto end, const bool invertParams)
+        {
+            return invertParams
+                   ? std::tuple<double, double>{end, ((start - end) / triHeight)}
+                   : std::tuple<double, double>{start, ((end - start) / triHeight)};
+        };
 
-        leftU = (leftVert->uv[0]);
-        leftV = (leftVert->uv[1]);
-        rightU = (rightVert->uv[0]);
-        rightV = (rightVert->uv[1]);
-        dLeftU = (peak->uv[0] - leftVert->uv[0]) / real(triHeight + 1);
-        dLeftV = (peak->uv[1] - leftVert->uv[1]) / real(triHeight + 1);
-        dRightU = (peak->uv[0] - rightVert->uv[0]) / real(triHeight + 1);
-        dRightV = (peak->uv[1] - rightVert->uv[1]) / real(triHeight + 1);
-
-        leftDepth = (leftVert->depth);
-        rightDepth = (rightVert->depth);
-        dLeftDepth = (peak->depth - leftVert->depth) / (triHeight + 1);
-        dRightDepth = (peak->depth - rightVert->depth) / (triHeight + 1);
+        std::tie(paramsLeft.invW, deltasLeft.invW) = make_params((1 / leftVert->w), (1 / peak->w), !isDownTri);
+        std::tie(paramsRight.invW, deltasRight.invW) = make_params((1 / rightVert->w), (1 / peak->w), !isDownTri);
+        std::tie(paramsLeft.startX, deltasLeft.startX) = make_params(leftVert->pos.x, peak->pos.x, !isDownTri);
+        std::tie(paramsRight.startX, deltasRight.startX) = make_params(rightVert->pos.x, peak->pos.x, !isDownTri);
+        std::tie(paramsLeft.u, deltasLeft.u) = make_params((leftVert->uv[0] / leftVert->w), (peak->uv[0] / peak->w), !isDownTri);
+        std::tie(paramsLeft.v, deltasLeft.v) = make_params((leftVert->uv[1] / leftVert->w), (peak->uv[1] / peak->w), !isDownTri);
+        std::tie(paramsRight.u, deltasRight.u) = make_params((rightVert->uv[0] / rightVert->w), (peak->uv[0] / peak->w), !isDownTri);
+        std::tie(paramsRight.v, deltasRight.v) = make_params((rightVert->uv[1] / rightVert->w), (peak->uv[1] / peak->w), !isDownTri);
+        std::tie(paramsLeft.depth, deltasLeft.depth) = make_params((leftVert->depth / leftVert->w), (peak->depth / peak->w), !isDownTri);
+        std::tie(paramsRight.depth, deltasRight.depth) = make_params((rightVert->depth / rightVert->w), (peak->depth / peak->w), !isDownTri);
     }
-    else
-    {
-        pixLeft = (peak->pos.x);
-        pixRight = (peak->pos.x);
-        dPixLeft = (leftVert->pos.x - peak->pos.x) / real(triHeight + 1);
-        dPixRight = (rightVert->pos.x - peak->pos.x) / real(triHeight + 1);
-
-        leftU = (peak->uv[0]);
-        leftV = (peak->uv[1]);
-        rightU = (peak->uv[0]);
-        rightV = (peak->uv[1]);
-        dLeftU = (leftVert->uv[0] - peak->uv[0]) / real(triHeight + 1);
-        dLeftV = (leftVert->uv[1] - peak->uv[1]) / real(triHeight + 1);
-        dRightU = (rightVert->uv[0] - peak->uv[0]) / real(triHeight + 1);
-        dRightV = (rightVert->uv[1] - peak->uv[1]) / real(triHeight + 1);
-
-        leftDepth = (peak->depth);
-        rightDepth = (peak->depth);
-        dLeftDepth = (leftVert->depth - peak->depth) / (triHeight + 1);
-        dRightDepth = (rightVert->depth - peak->depth) / (triHeight + 1);
-    }
-
-    #define INCREMENT_PARAMS(steps)  pixLeft  += dPixLeft  * steps;\
-                                     pixRight += dPixRight * steps;\
-                                     leftU    += dLeftU    * steps;\
-                                     leftV    += dLeftV    * steps;\
-                                     rightU   += dRightU   * steps;\
-                                     rightV   += dRightV   * steps;\
-                                     leftDepth += dLeftDepth * steps;\
-                                     rightDepth+= dRightDepth* steps;
 
     // Bounds-check to make sure we're not going to draw outside of the screen area
     // horizontally.
     if (startRow < 0)
     {
-        const uint steps = abs(startRow);
-        INCREMENT_PARAMS(steps)
+        paramsLeft.increment(deltasLeft, abs(startRow));
+        paramsRight.increment(deltasRight, abs(startRow));
 
         startRow = 0;
     }
@@ -318,18 +317,16 @@ static void fill_split_triangle(const vertex4_s *peak,
     // the left and right edge of the triangle.
     for (int row = startRow; row <= endRow; row++)
     {
-        INCREMENT_PARAMS(1)
+        paramsLeft.increment(deltasLeft);
+        paramsRight.increment(deltasRight);
 
         rs_fill_tri_row(row,
-                        pixLeft, pixRight,
-                        leftU, leftV, rightU, rightV,
-                        leftDepth, rightDepth,
+                        paramsLeft,
+                        paramsRight,
                         triangleMaterial,
                         dstPixelmap,
                         dstDepthmap);
     }
-
-    #undef INCREMENT_PARAMS
 
     return;
 }
@@ -359,9 +356,10 @@ void kr_rasterize_triangle(const triangle_s &tri,
     // Split the triangle into two parts, one pointing up and the other down.
     // (Split algo from Bastian Molkenthin's www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html.)
     vertex4_s splitBase;
-    const real splitRatio = ((mid->pos.y - high->pos.y) / (real)(low->pos.y - high->pos.y));
-    splitBase.pos.x = high->pos.x + ((low->pos.x - high->pos.x) * splitRatio);
+    const double splitRatio = ((mid->pos.y - high->pos.y) / (real)(low->pos.y - high->pos.y));
+    splitBase.pos.x = (high->pos.x + ((low->pos.x - high->pos.x) * splitRatio));
     splitBase.pos.y = mid->pos.y;
+    splitBase.w = LERP(high->w, low->w, splitRatio);
     splitBase.depth = LERP(high->depth, low->depth, splitRatio);
     splitBase.uv[0] = LERP(high->uv[0], low->uv[0], splitRatio);
     splitBase.uv[1] = LERP(high->uv[1], low->uv[1], splitRatio);
