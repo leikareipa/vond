@@ -2,17 +2,18 @@ DEFINES += ENFORCE_OPTIONAL_ASSERTS # Enable non-critical asserts. May perform s
 
 TEMPLATE = app
 QT       += core gui widgets
-CONFIG   += console c++11
+CONFIG   += console
 
 OBJECTS_DIR = generated_files
 MOC_DIR = generated_files
 UI_DIR = generated_files
 
+INCLUDEPATH += $$PWD/src/
+
 SOURCES += src/main.cpp \
     src/display/display.cpp \
     src/display/window.cpp \
     src/render/landscape.cpp \
-    src/memory/memory.cpp \
     src/display/w_opengl.cpp \
     src/ui/text.cpp \
     src/render/render.cpp \
@@ -30,8 +31,6 @@ HEADERS += \
     src/common.h \
     src/main.h \
     src/render/landscape.h \
-    src/memory.h \
-    src/memory/memory_interface.h \
     src/image.h \
     src/matrix44.h \
     src/render.h \
@@ -43,12 +42,11 @@ HEADERS += \
     src/render/polygon.h \
     src/data_access/mesh_file.h \
     src/data_access/world_file.h \
-    src/config_file_read.h \
-    src/data_access/asset_store.h
+    src/config_file_read.h
 
 # C++. For GCC/Clang.
 QMAKE_CXXFLAGS += -g
-QMAKE_CXXFLAGS += -ansi
+QMAKE_CXXFLAGS += -std=c++17
 QMAKE_CXXFLAGS += -O2
 QMAKE_CXXFLAGS += -Wall
 QMAKE_CXXFLAGS += -pipe
