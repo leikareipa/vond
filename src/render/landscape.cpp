@@ -10,7 +10,6 @@
 #include <cstdlib>
 #include "../../src/matrix44.h"
 #include "../../src/vector.h"
-#include "../../src/memory.h"
 #include "../../src/common.h"
 #include "../../src/camera.h"
 #include "../../src/render.h"
@@ -27,7 +26,7 @@ static enum class detail_level_e
     l50,
     l75,
     l100
-} DETAIL_LEVEL = detail_level_e::l50;
+} DETAIL_LEVEL = detail_level_e::l100;
 
 static const real PERSPECTIVE_CORRECTION_DETAIL =
         (DETAIL_LEVEL == detail_level_e::l100)? 0.05
@@ -77,7 +76,6 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
     {
         uint stepsTaken = 0;    // How many steps we've traced along the current vertical pixel.
         uint rayDepth = 0;      // How many steps the ray has traced into the current horizontal slice.
-        double rayDepthF = 0;
 
         const real screenPlaneX = ((2.0 * ((x + 0.5) / dstPixelmap.width()) - 1.0) * tanFov * aspectRatio);
         const real perspectiveCorrection = std::max(PERSPECTIVE_CORRECTION_DETAIL,
@@ -148,7 +146,7 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                         #endif
 
                         // Get the height of the voxel that's directly below this ray.
-                        real voxelHeight = (rayDepth < 500)
+                        real voxelHeight = (rayDepth < 900000)
                                            ? srcHeightmap.interpolated_pixel_at(ray.pos.x, ray.pos.z).r
                                            : srcHeightmap.pixel_at(ray.pos.x, ray.pos.z).r;
 
@@ -156,11 +154,14 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                         // is taller than the ray's current height).
                         if (voxelHeight >= ray.pos.y)
                         {
-                            const color_rgba_s<u8> color = (rayDepth < 1500)
-                                                           ? srcTexture.interpolated_pixel_at(ray.pos.x, ray.pos.z)
-                                                           : srcTexture.pixel_at(ray.pos.x, ray.pos.z);
-
                             const double depth = ray.pos.distance_to(camera.pos);
+                            const double distanceFog = std::max(1.0, std::min(2.0, (depth / 2200.0)));
+
+                            color_rgba_s<u8> color = (rayDepth < 900000)
+                                                     ? srcTexture.interpolated_pixel_at(ray.pos.x, ray.pos.z)
+                                                     : srcTexture.pixel_at(ray.pos.x, ray.pos.z);
+
+                            color.b = std::min(255.0, (color.b * distanceFog));
 
                             dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
                             dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth, depth, depth};
@@ -205,15 +206,11 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                     // The base horizon color when looking directly into the horizon.
                     color_rgba_s<u8> horizonColor = {125, 145, 175, 255};
 
-                    // The amount by which to scale the base horizon color when
-                    // taking into consideration the direction of the camera.
-                    u8 scaledColor = floor(100 * rayHeight*1.1);
-                    if (scaledColor > 115) scaledColor = 115;
-                    color_rgba_s<u8> scaledHorizonColor = {scaledColor, scaledColor, scaledColor, 255};
+                    int colorAttenuation = std::min(115, (int)floor(190 * rayHeight * 1.1));
 
-                    const color_rgba_s<u8> color = {u8(horizonColor.r - scaledHorizonColor.r),
-                                                    u8(horizonColor.g - scaledHorizonColor.g),
-                                                    u8(horizonColor.b - scaledHorizonColor.b),
+                    const color_rgba_s<u8> color = {u8(horizonColor.r - colorAttenuation),
+                                                    u8(horizonColor.g - colorAttenuation),
+                                                    u8(horizonColor.b - colorAttenuation),
                                                     255};
 
                     const double depth = std::numeric_limits<double>::max();
