@@ -1,15 +1,14 @@
 # Vond
-A hybrid voxel/polygon 3D renderer. Runs on the CPU.
+A hybrid voxel/polygon 3D renderer that runs on the CPU.
 
 Draws inspiration from the 1990s Delta Force and Outcast games.
 
 This software is currently in very early alpha.
 
-![A screenshot of Vond](images/screenshots/vond-1.png)
-![A screenshot of Vond](images/screenshots/vond-2.png)
-![A screenshot of Vond](images/screenshots/vond-3.png)
+![A screenshot of Vond](images/screenshots/vond-4.png)\
+(Rendered by Vond with surface data from  the National Land Survey of Finland: ortophoto & elevation model 11/2020.)
 
-### Building
+# Building
 To build Vond, you'll need Qt and OpenMP.
 
 On Linux, do ```qmake && make```, or load the .pro file in Qt Creator.
