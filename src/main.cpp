@@ -30,7 +30,7 @@ static void init_system(void)
 {
     DEBUG(("Initializing the program..."));
 
-    kd_acquire_display(1600, 1000, "\"Vond\" by Tarpeeksi Hyvae Soft");
+    kd_acquire_display(1280, 800, "\"Vond\" by Tarpeeksi Hyvae Soft");
 
     return;
 }
@@ -40,8 +40,6 @@ static void release_system(void)
     DEBUG(("Releasing the program..."));
 
     kd_release_display();
-
-    kmem_deallocate_memory_cache();
 
     return;
 }
@@ -81,7 +79,7 @@ int main(void)
         // the render resolution, which is then upscaled to the resolution of the
         // window.
         image_s<u8> pixelmap(320, 200, 32);
-        image_s<double> depthmap(320, 200, 32);
+        image_s<double> depthmap(pixelmap.width(), pixelmap.height(), pixelmap.bpp());
 
         // Load the landscape heightmap and texture map, as well as a polygon object
         // for testing.
@@ -90,12 +88,15 @@ int main(void)
         image_s<u8> texture(QImage("terrain_texture.png"));
         std::vector<triangle_s> tris2 = kmesh_mesh_triangles("untitled.vmf");
 
+        heightmap.boundsCheckingMode = image_bounds_checking_mode_e::wrapped;
+        texture.boundsCheckingMode = image_bounds_checking_mode_e::wrapped;
+
         /// TODO: In the future, camera initialization will be handled somewhere other than here.
         camera_s camera;
-        camera.pos = {512, 260, 512};
+        camera.pos = {512, 160, 512};
         camera.orientation = {0.5, -0.3, 0};
         camera.zoom = 1;
-        camera.fov = 70;
+        camera.fov = 60;
 
         while (!PROGRAM_EXIT_REQUESTED)
         {
@@ -110,6 +111,7 @@ int main(void)
             // Prepare for the new frame.
             {
                 depthmap.fill({std::numeric_limits<double>::max()});
+                pixelmap.fill({0});
                 ktext_clear_ui_text_entries();
                 kinput_reset_input_state();
             }
@@ -159,7 +161,7 @@ int main(void)
 
             // Statistics.
             {
-                const uint curFPS = (1000 / totalTime);
+                const uint curFPS = (1000 / (totalTime? totalTime : 1));
 
                 // Calculate the average.
                 fps.push_back(curFPS);

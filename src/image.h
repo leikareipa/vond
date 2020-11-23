@@ -9,9 +9,16 @@
 
 #include <QImage>
 #include <QColor>
-#include "../../src/memory/memory_interface.h"
 #include "../../src/vector.h"
 #include "../../src/types.h"
+
+// Determines how image coordinates that fall outside of the image's dimensions
+// are handled.
+enum class image_bounds_checking_mode_e
+{
+    clamped,
+    wrapped,
+};
 
 template <typename T>
 struct image_s
@@ -116,10 +123,13 @@ struct image_s
         k_assert_optional(pixels, "Tried to access the pixels of a null image.");
         k_assert_optional(((x < this->width()) && (y < this->height())), "Tried to access an image pixel out of bounds.");
 
-        const uint xFloored = floor(x);
-        const uint yFloored = floor(y);
+        uint xFloored = floor(x);
+        uint yFloored = floor(y);
         const double xBias = (x - xFloored);
         const double yBias = (y - yFloored);
+
+        if (xFloored >= (this->width() - 1)) xFloored = (this->width() - 2);
+        if (yFloored >= (this->height() - 1)) yFloored = (this->height() - 2);
 
         const T r1 = LERP(pixels[(xFloored       + yFloored       * this->width())].r,
                           pixels[(xFloored       + (yFloored + 1) * this->width())].r, yBias);
@@ -167,8 +177,8 @@ struct image_s
     {
         switch (this->boundsCheckingMode)
         {
-            case bounds_checking_mode_e::wrapped: return this->wrapped_coordinates(x, y);
-            case bounds_checking_mode_e::clamped: return this->clamped_coordinates(x, y);
+            case image_bounds_checking_mode_e::wrapped: return this->wrapped_coordinates(x, y);
+            case image_bounds_checking_mode_e::clamped: return this->clamped_coordinates(x, y);
         }
 
         return this->clamped_coordinates(x, y);
@@ -179,15 +189,17 @@ struct image_s
         if (x < 0) x = 0;
         else if (x >= this->width()) x = (this->width() - 1);
         if (y < 0) y = 0;
-        else if (y >= this->width()) y = (this->width() - 1);
+        else if (y >= this->height()) y = (this->height() - 1);
 
         return {x, y};
     }
 
     std::tuple<double, double> wrapped_coordinates(double x, double y) const
     {
-        return {((x / (this->width() - 1) - floor(x / (this->width() - 1))) * this->width()),
-                ((y / (this->height() - 1) - floor(y / (this->height() - 1))) * this->height())};
+        double xw = ((x / (this->width() - 1) - floor(x / (this->width() - 1))) * this->width());
+        double yw = ((y / (this->height() - 1) - floor(y / (this->height() - 1))) * this->height());
+
+        return clamped_coordinates(xw, yw);
     }
 
     // Returns a copy of this image but with its values converted into the given
@@ -215,19 +227,15 @@ struct image_s
         return newImage;
     }
 
+    // Determines how image coordinates that fall outside of the image's dimensions
+    // are handled.
+    image_bounds_checking_mode_e boundsCheckingMode = image_bounds_checking_mode_e::clamped;
+
 private:
     const unsigned width_;
     const unsigned height_;
     const unsigned bpp_;
     color_rgba_s<T> *const pixels;
-
-    // Determines how image coordinates that fall outside of the image's dimensions
-    // are handled.
-    enum class bounds_checking_mode_e
-    {
-        clamped,
-        wrapped,
-    } boundsCheckingMode = bounds_checking_mode_e::clamped;
 };
 
 #endif
