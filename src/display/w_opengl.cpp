@@ -90,6 +90,8 @@ void OGLWidget::paintGL()
 
 void OGLWidget::upload_canvas_texture(const image_s<u8> &image)
 {
+    k_assert_optional(image.pixel_array(), "Expected a non-null pixel array.");
+
     this->glBindTexture(GL_TEXTURE_2D, frameBufferTextureIdx);
     this->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, image.width(), image.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, image.pixel_array());
 

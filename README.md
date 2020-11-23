@@ -1,9 +1,13 @@
 # Vond
-A software-based hybrid voxel/polygon 3d landscape renderer, akin in spirit to Novalogic's classic Voxel Space engine, with genuine retro visuals.
+A hybrid voxel/polygon 3D renderer. Runs on the CPU.
 
-The voxel renderer operates on heightmaps and runs on the CPU (multithreaded via OpenMP). The polygon rasterizer is likewise CPU-side (single-threaded), and capable of rendering triangles with affine texture mapping.
+Draws inspiration from the 1990s Delta Force and Outcast games.
 
-This repo contains the source code to Vond, compilable on Windows and Linux (with Qt). Note that since the program is still in a state of relative infancy, it may undergo notable changes in the short term.
+This software is currently in very early alpha.
+
+![A screenshot of Vond](images/screenshots/vond-1.png)
+![A screenshot of Vond](images/screenshots/vond-2.png)
+![A screenshot of Vond](images/screenshots/vond-3.png)
 
 ### Building
 To build Vond, you'll need Qt and OpenMP.
@@ -11,7 +15,3 @@ To build Vond, you'll need Qt and OpenMP.
 On Linux, do ```qmake && make```, or load the .pro file in Qt Creator.
 
 Building on Windows should be much the same, though I can't say for sure.
-
-I use GCC and Qt 5.5 with Vond, so those might give you the fewest headaches in terms of feature compatibility and so on.
-
-![A screenshot of Vond](images/screenshots/vond-1.png)

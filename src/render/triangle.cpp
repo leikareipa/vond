@@ -212,7 +212,7 @@ static void rs_fill_tri_row(const uint row,
             const color_rgba_s<u8> color = triangleMaterial.texture->pixel_at(u, v);
             const double depth = (currentParams.depth / currentParams.invW);
 
-            if (dstDepthmap.pixel_at(x, row).r >= depth)
+            if (dstDepthmap.pixel_at(x, row).r > depth)
             {
                 dstPixelmap.pixel_at(x, row) = color;
                 dstDepthmap.pixel_at(x, row) = {depth, depth, depth};

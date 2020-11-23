@@ -26,7 +26,7 @@ static enum class detail_level_e
     l50,
     l75,
     l100
-} DETAIL_LEVEL = detail_level_e::l100;
+} DETAIL_LEVEL = detail_level_e::l50;
 
 static const real PERSPECTIVE_CORRECTION_DETAIL =
         (DETAIL_LEVEL == detail_level_e::l100)? 0.05
@@ -146,7 +146,7 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                         #endif
 
                         // Get the height of the voxel that's directly below this ray.
-                        real voxelHeight = (rayDepth < 900000)
+                        real voxelHeight = (rayDepth < 500)
                                            ? srcHeightmap.interpolated_pixel_at(ray.pos.x, ray.pos.z).r
                                            : srcHeightmap.pixel_at(ray.pos.x, ray.pos.z).r;
 
@@ -157,7 +157,7 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                             const double depth = ray.pos.distance_to(camera.pos);
                             const double distanceFog = std::max(1.0, std::min(2.0, (depth / 2200.0)));
 
-                            color_rgba_s<u8> color = (rayDepth < 900000)
+                            color_rgba_s<u8> color = (rayDepth < 3000)
                                                      ? srcTexture.interpolated_pixel_at(ray.pos.x, ray.pos.z)
                                                      : srcTexture.pixel_at(ray.pos.x, ray.pos.z);
 

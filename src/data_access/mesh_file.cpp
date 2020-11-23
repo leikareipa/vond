@@ -11,10 +11,8 @@
 #include <fstream>
 #include <vector>
 #include <regex>
-#include "../../src/data_access/asset_store.h"
 #include "../../src/data_access/mesh_file.h"
 #include "../../src/config_file_read.h"
-#include "../../src/memory.h"
 #include "../../src/render.h"
 
 // Returns the triangles stored in the given mesh config file.
@@ -106,7 +104,7 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                             meshFile.error_if_not(!material.texture, "Can't re-define the texture for a material.");
                             meshFile.error_if_not((line.params.size() == 1), "Expected one parameters for the material's texture filename.");
 
-                            material.texture = new image_s<u8>(QImage(line.params.at(0).c_str()));
+                            material.texture = new image_s<u8>(QImage(QString::fromStdString(line.params.at(0))));
 
                             break;
                         }
@@ -200,7 +198,7 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                         tri.v[0] = vertices.at(0);
                         tri.v[1] = vertices.at(1);
                         tri.v[2] = vertices.at(2);
-                        tri.material = kasset_make_asset<polygon_material_s>(&material);
+                        tri.material = material;
 
                         triangles.push_back(tri);
                     }
