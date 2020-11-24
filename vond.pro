@@ -10,43 +10,42 @@ UI_DIR = generated_files
 
 INCLUDEPATH += $$PWD/src/
 
-SOURCES += src/main.cpp \
-    src/display/display.cpp \
-    src/display/window.cpp \
-    src/render/landscape.cpp \
-    src/display/w_opengl.cpp \
-    src/ui/text.cpp \
-    src/render/render.cpp \
-    src/ui/input.cpp \
-    src/render/triangle.cpp \
-    src/data_access/mesh_file.cpp \
-    src/data_access/world_file.cpp \
-    src/data_access/config_file_read.cpp
+SOURCES += src/auxiliary/main.cpp \
+    src/auxiliary/display/qt/display.cpp \
+    src/auxiliary/display/qt/window.cpp \
+    src/vond/render_landscape.cpp \
+    src/auxiliary/display/qt/w_opengl.cpp \
+    src/auxiliary/ui/text.cpp \
+    src/auxiliary/ui/input.cpp \
+    src/vond/render_triangles.cpp \
+    src/auxiliary/data_access/mesh_file.cpp \
+    src/auxiliary/data_access/config_file_read.cpp
 
 HEADERS += \
-    src/display.h \
-    src/camera.h \
+    src/auxiliary/display.h \
+    src/vond/camera.h \
     src/types.h \
-    src/display/window.h \
+    src/auxiliary/display/qt/window.h \
     src/common.h \
-    src/main.h \
-    src/render/landscape.h \
-    src/image.h \
-    src/matrix44.h \
-    src/render.h \
-    src/display/w_opengl.h \
-    src/ui.h \
-    src/ui/text.h \
-    src/vector.h \
-    src/ui/input.h \
-    src/render/polygon.h \
-    src/data_access/mesh_file.h \
-    src/data_access/world_file.h \
-    src/config_file_read.h
+    src/auxiliary/main.h \
+    src/vond/render_landscape.h \
+    src/vond/image.h \
+    src/vond/matrix.h \
+    src/vond/render.h \
+    src/auxiliary/display/qt/w_opengl.h \
+    src/auxiliary/ui.h \
+    src/auxiliary/ui/text.h \
+    src/vond/triangle.h \
+    src/vond/vector.h \
+    src/auxiliary/ui/input.h \
+    src/vond/render_triangles.h \
+    src/auxiliary/data_access/mesh_file.h \
+    src/auxiliary/config_file_read.h \
+    src/vond/vertex.h
 
 # C++. For GCC/Clang.
 QMAKE_CXXFLAGS += -g
-QMAKE_CXXFLAGS += -std=c++17
+QMAKE_CXXFLAGS += -std=c++2a
 QMAKE_CXXFLAGS += -O2
 QMAKE_CXXFLAGS += -Wall
 QMAKE_CXXFLAGS += -pipe
