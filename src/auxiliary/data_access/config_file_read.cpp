@@ -24,7 +24,7 @@
 
 #include <regex>
 #include "auxiliary/config_file_read.h"
-#include "common.h"
+#include "vond/assert.h"
 
 config_file_read_c::config_file_read_c(const char * const filename) :
     fileName(filename)
@@ -32,7 +32,7 @@ config_file_read_c::config_file_read_c(const char * const filename) :
     curLineNum = 0;
 
     fileStream.open(fileName);
-    k_assert(fileStream.is_open(), "Failed to open the data file.");
+    vond_assert(fileStream.is_open(), "Failed to open the data file.");
 
     return;
 }
@@ -76,7 +76,7 @@ config_file_line_s config_file_read_c::next_line()
         }
 
         // The indent level is the number of prefixed tabs.
-        k_assert((strspn(tmp.c_str(), " ") == 0), "Spaces aren't allowed as indent markers.");
+        vond_assert((strspn(tmp.c_str(), " ") == 0), "Spaces aren't allowed as indent markers.");
         line.indentLevel = strspn(tmp.c_str(), "\t");
 
         // Now that we know the indent level, we can remove all whitespace to make

@@ -2,7 +2,7 @@
 #define TRIANGLE_H
 
 #include <string>
-#include "common.h"
+#include "vond/assert.h"
 #include "vond/image.h"
 #include "vond/vertex.h"
 

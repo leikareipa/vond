@@ -29,7 +29,7 @@ struct image_s
         bpp_(bpp),
         pixels(new color_rgba_s<T>[width * height])
     {
-        k_assert(((this->width() > 0) &&
+        vond_assert(((this->width() > 0) &&
                   (this->height() > 0) &&
                   (this->bpp() > 0)),
                  "Invalid image resolution detected.");
@@ -44,7 +44,7 @@ struct image_s
     image_s(const QImage &qImage) :
         image_s(uint(qImage.width()), uint(qImage.height()), uint(qImage.depth()))
     {
-        k_assert(!qImage.isNull(), "Was asked to create an image out of a null QImage.");
+        vond_assert(!qImage.isNull(), "Was asked to create an image out of a null QImage.");
 
         // Copy the pixels over.
         for (unsigned y = 0; y < this->height(); y++)
@@ -74,7 +74,7 @@ struct image_s
                     }
                     default:
                     {
-                        k_assert(0, "Encountered an unknown color depth when converting from a QImage.");
+                        vond_assert(0, "Encountered an unknown color depth when converting from a QImage.");
                         break;
                     }
                 }
@@ -110,8 +110,8 @@ struct image_s
     {
         std::tie(x, y) = this->bounds_checked_coordinates(x, y);
 
-        k_optional_assert(pixels, "Tried to access the pixels of a null image.");
-        k_optional_assert(((x < this->width()) && (y < this->height())), "Tried to access an image pixel out of bounds.");
+        vond_optional_assert(pixels, "Tried to access the pixels of a null image.");
+        vond_optional_assert(((x < this->width()) && (y < this->height())), "Tried to access an image pixel out of bounds.");
 
         return pixels[(x + y * this->width())];
     }
@@ -120,8 +120,8 @@ struct image_s
     {
         std::tie(x, y) = this->bounds_checked_coordinates(x, y);
 
-        k_optional_assert(pixels, "Tried to access the pixels of a null image.");
-        k_optional_assert(((x < this->width()) && (y < this->height())), "Tried to access an image pixel out of bounds.");
+        vond_optional_assert(pixels, "Tried to access the pixels of a null image.");
+        vond_optional_assert(((x < this->width()) && (y < this->height())), "Tried to access an image pixel out of bounds.");
 
         unsigned xFloored = floor(x);
         unsigned yFloored = floor(y);

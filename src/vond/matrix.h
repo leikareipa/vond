@@ -37,7 +37,7 @@
 #define MATRIX44_H
 
 #include <cmath>
-#include "common.h"
+#include "vond/assert.h"
 
 struct matrix44_s
 {

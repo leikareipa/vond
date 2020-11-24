@@ -10,7 +10,7 @@
 #include <cstdlib>
 #include "vond/matrix.h"
 #include "vond/vector.h"
-#include "common.h"
+#include "vond/assert.h"
 #include "vond/camera.h"
 #include "vond/render.h"
 #include "vond/image.h"
@@ -57,11 +57,11 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                        image_s<double> &dstDepthmap,
                        const camera_s &camera)
 {
-    k_assert((srcHeightmap.width() == srcTexture.width()) &&
+    vond_assert((srcHeightmap.width() == srcTexture.width()) &&
              (srcHeightmap.height() == srcTexture.height()),
              "The heightmap must have the same resolution as the texture map.");
 
-    k_assert((dstPixelmap.width() == dstDepthmap.width()) &&
+    vond_assert((dstPixelmap.width() == dstDepthmap.width()) &&
              (dstPixelmap.height() == dstDepthmap.height()),
              "The pixel map must have the same resolution as the depth map.");
 

@@ -15,7 +15,7 @@
 #include "auxiliary/display/qt/window.h"
 #include "vond/render.h"
 #include "vond/camera.h"
-#include "common.h"
+#include "vond/assert.h"
 
 // The window we'll display the program in.
 static Window *WINDOW = nullptr;

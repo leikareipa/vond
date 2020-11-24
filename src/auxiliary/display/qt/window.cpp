@@ -13,7 +13,7 @@
 #include "auxiliary/main.h"
 #include "auxiliary/ui.h"
 #include "vond/image.h"
-#include "common.h"
+#include "vond/assert.h"
 
 static OGLWidget *OGL_SURFACE = nullptr;
 
@@ -51,7 +51,7 @@ Window::~Window()
 
 void Window::set_canvas_image(const image_s<uint8_t> &image)
 {
-    k_assert(image.bpp() == 32, "Expected a 32-bit image.");
+    vond_assert(image.bpp() == 32, "Expected a 32-bit image.");
 
     OGL_SURFACE->upload_canvas_texture(image);
     OGL_SURFACE->update();

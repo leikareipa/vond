@@ -25,7 +25,7 @@ HEADERS += \
     src/auxiliary/display.h \
     src/vond/camera.h \
     src/auxiliary/display/qt/window.h \
-    src/common.h \
+    src/vond/assert.h \
     src/auxiliary/main.h \
     src/vond/render_landscape.h \
     src/vond/image.h \

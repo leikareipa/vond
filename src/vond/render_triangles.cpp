@@ -238,7 +238,7 @@ static void fill_split_triangle(const vertex4_s *peak,
                                 image_s<uint8_t> &dstPixelmap,
                                 image_s<double> &dstDepthmap)
 {
-    k_assert((base1->pos.y == base2->pos.y),
+    vond_assert((base1->pos.y == base2->pos.y),
              "The software triangle filler was given a malformed triangle. Expected a flat base.");
 
     // Values to be interpolated vertically as we render the triangle.

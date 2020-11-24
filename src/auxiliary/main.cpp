@@ -17,7 +17,7 @@
 #include "auxiliary/config_file_read.h"
 #include "auxiliary/display.h"
 #include "vond/render.h"
-#include "common.h"
+#include "vond/assert.h"
 #include "vond/camera.h"
 #include "vond/image.h"
 #include "auxiliary/ui.h"

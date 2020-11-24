@@ -41,7 +41,7 @@ void OGLWidget::initializeGL()
     this->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     this->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    k_assert(!glGetError(), "OpenGL initialization failed.");
+    vond_assert(!glGetError(), "OpenGL initialization failed.");
 
     return;
 }
@@ -90,7 +90,7 @@ void OGLWidget::paintGL()
 
 void OGLWidget::upload_canvas_texture(const image_s<uint8_t> &image)
 {
-    k_optional_assert(image.pixel_array(), "Expected a non-null pixel array.");
+    vond_optional_assert(image.pixel_array(), "Expected a non-null pixel array.");
 
     this->glBindTexture(GL_TEXTURE_2D, frameBufferTextureIdx);
     this->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, image.width(), image.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, image.pixel_array());
