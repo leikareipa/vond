@@ -30,7 +30,7 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
     while (!meshFile.file_is_at_end())
     {
         //const std::string lineString = line.first;
-        const uint parentIndentLevel = line.indentLevel;
+        const unsigned parentIndentLevel = line.indentLevel;
 
         // Skip empty lines.
         if (line.command == 0)
@@ -103,7 +103,7 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                             meshFile.error_if_not(!material.texture, "Can't re-define the texture for a material.");
                             meshFile.error_if_not((line.params.size() == 1), "Expected one parameters for the material's texture filename.");
 
-                            material.texture = new image_s<u8>(QImage(QString::fromStdString(line.params.at(0))));
+                            material.texture = new image_s<uint8_t>(QImage(QString::fromStdString(line.params.at(0))));
 
                             break;
                         }
@@ -127,7 +127,7 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                        line.command == 'p' &&
                        line.indentLevel == (parentIndentLevel + 1))
                 {
-                    const uint indentLevel = line.indentLevel;
+                    const unsigned indentLevel = line.indentLevel;
 
                     meshFile.error_if_not(line.params.size() == 1, "Expected the polygon line to have one parameter.");
 
@@ -142,7 +142,7 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                            line.command == 'v' &&
                            line.indentLevel == (indentLevel + 1))
                     {
-                        const uint indentLevel = line.indentLevel;
+                        const unsigned indentLevel = line.indentLevel;
 
                         meshFile.error_if_not(line.params.size() == 3, "Expected vertices to have three coordinates.");
 
@@ -166,14 +166,14 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                                line.command == '!' &&
                                line.indentLevel == (indentLevel + 1))
                         {
-                            const uint indentLevel = line.indentLevel;
+                            const unsigned indentLevel = line.indentLevel;
 
                             meshFile.error_if_not(line.params.size() == 2, "Expected each vertex u,v coordinate pair to have only two entries.");
 
                             // Extract the u,v data from the line. We clamp the values
                             // to a maximum of 1-(float)eps to prevent out-of-bounds
                             // access of texture data.
-                            static_assert(std::is_same<real, std::remove_all_extents<decltype(vert.uv)>::type>::value, "Expected a floating-point variable.");
+                            static_assert(std::is_same<double, std::remove_all_extents<decltype(vert.uv)>::type>::value, "Expected a floating-point variable.");
                             vert.uv[0] = std::min((std::stoi(line.params.at(0)) / 1000000.0), (1.0 - std::numeric_limits<float>::epsilon()));
                             vert.uv[1] = std::min((std::stoi(line.params.at(1)) / 1000000.0), (1.0 - std::numeric_limits<float>::epsilon()));
 

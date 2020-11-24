@@ -17,7 +17,7 @@
 
 // The maximum number of steps from the camera that rays are traced. If the ray
 // exceeds the bounds of the heightmap, it'll be wrapped around it.
-static const uint MAX_RAY_LENGTH = 1000000;
+static const unsigned MAX_RAY_LENGTH = 1000000;
 
 static enum class detail_level_e
 {
@@ -28,14 +28,14 @@ static enum class detail_level_e
     l100
 } DETAIL_LEVEL = detail_level_e::l50;
 
-static const real PERSPECTIVE_CORRECTION_DETAIL =
+static const double PERSPECTIVE_CORRECTION_DETAIL =
         (DETAIL_LEVEL == detail_level_e::l100)? 0.05
         : (DETAIL_LEVEL == detail_level_e::l75)? 0.1
         : (DETAIL_LEVEL == detail_level_e::l50)? 0.2
         : (DETAIL_LEVEL == detail_level_e::l25)? 0.3
         : 0.4;
 
-static const real RAY_SKIP_MULTIPLIER =
+static const double RAY_SKIP_MULTIPLIER =
         (DETAIL_LEVEL == detail_level_e::l100)? 0.0001
         : (DETAIL_LEVEL == detail_level_e::l75)? 0.0002
         : (DETAIL_LEVEL == detail_level_e::l50)? 0.0003
@@ -52,8 +52,8 @@ struct ray_s
 };
 
 void kr_draw_landscape(const image_s<double> &srcHeightmap,
-                       const image_s<u8> &srcTexture,
-                       image_s<u8> &dstPixelmap,
+                       const image_s<uint8_t> &srcTexture,
+                       image_s<uint8_t> &dstPixelmap,
                        image_s<double> &dstDepthmap,
                        const camera_s &camera)
 {
@@ -65,29 +65,29 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
              (dstPixelmap.height() == dstDepthmap.height()),
              "The pixel map must have the same resolution as the depth map.");
 
-    const real aspectRatio = (dstPixelmap.width() / real(dstPixelmap.height()));
-    const real tanFov = tan((camera.fov / 2.0) * (M_PI / 180.0));
+    const double aspectRatio = (dstPixelmap.width() / double(dstPixelmap.height()));
+    const double tanFov = tan((camera.fov / 2.0) * (M_PI / 180.0));
     const matrix44_s viewMatrix = (matrix44_rotation_s(0, camera.orientation.y, 0) *
                                    matrix44_rotation_s(camera.orientation.x, 0, 0));
 
     // Loop through each horizontal slice on the screen.
     #pragma omp parallel for
-    for (uint x = 0; x < dstPixelmap.width(); x++)
+    for (unsigned x = 0; x < dstPixelmap.width(); x++)
     {
-        uint stepsTaken = 0;    // How many steps we've traced along the current vertical pixel.
-        uint rayDepth = 0;      // How many steps the ray has traced into the current horizontal slice.
+        unsigned stepsTaken = 0;    // How many steps we've traced along the current vertical pixel.
+        unsigned rayDepth = 0;      // How many steps the ray has traced into the current horizontal slice.
 
-        const real screenPlaneX = ((2.0 * ((x + 0.5) / dstPixelmap.width()) - 1.0) * tanFov * aspectRatio);
-        const real perspectiveCorrection = std::max(PERSPECTIVE_CORRECTION_DETAIL,
-                                                    acos(vector3_s<double>{screenPlaneX, 0, camera.zoom}.dot(vector3_s<double>{0, 0, camera.zoom})));
+        const double screenPlaneX = ((2.0 * ((x + 0.5) / dstPixelmap.width()) - 1.0) * tanFov * aspectRatio);
+        const double perspectiveCorrection = std::max(PERSPECTIVE_CORRECTION_DETAIL,
+                                                      acos(vector3_s<double>{screenPlaneX, 0, camera.zoom}.dot(vector3_s<double>{0, 0, camera.zoom})));
 
         // For each horizontal slice, shoot a ray toward each of the pixels in its
         // vertical column, starting from the bottom of the screen and working up.
         {
-            uint y = 0;
+            unsigned y = 0;
             for (; y < dstPixelmap.height(); y++)
             {
-                const real screenPlaneY = ((2.0 * ((y + 0.5) / dstPixelmap.height()) - 1.0) * tanFov);
+                const double screenPlaneY = ((2.0 * ((y + 0.5) / dstPixelmap.height()) - 1.0) * tanFov);
 
                 ray_s ray;
 
@@ -146,7 +146,7 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                         #endif
 
                         // Get the height of the voxel that's directly below this ray.
-                        real voxelHeight = (rayDepth < 500)
+                        double voxelHeight = (rayDepth < 500)
                                            ? srcHeightmap.interpolated_pixel_at(ray.pos.x, ray.pos.z).r
                                            : srcHeightmap.pixel_at(ray.pos.x, ray.pos.z).r;
 
@@ -157,9 +157,9 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                             const double depth = ray.pos.distance_to(camera.pos);
                             const double distanceFog = std::max(1.0, std::min(2.0, (depth / 2200.0)));
 
-                            color_rgba_s<u8> color = (rayDepth < 3000)
-                                                     ? srcTexture.interpolated_pixel_at(ray.pos.x, ray.pos.z)
-                                                     : srcTexture.pixel_at(ray.pos.x, ray.pos.z);
+                            color_rgba_s<uint8_t> color = (rayDepth < 3000)
+                                                          ? srcTexture.interpolated_pixel_at(ray.pos.x, ray.pos.z)
+                                                          : srcTexture.pixel_at(ray.pos.x, ray.pos.z);
 
                             //color.b = std::min(255.0, (color.b * distanceFog));
 
@@ -179,7 +179,7 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                         }
 
                         // Move the ray to the next voxel.
-                        const uint extraSteps = (rayDepth * RAY_SKIP_MULTIPLIER);
+                        const unsigned extraSteps = (rayDepth * RAY_SKIP_MULTIPLIER);
                         ray.pos += (ray.dir * (extraSteps + 1));
                         rayDepth += (extraSteps + 1);
                     }
@@ -193,7 +193,7 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                 {
                     ray_s ray;
 
-                    const real screenPlaneY = (2.0 * ((y + 0.5) / dstPixelmap.height()) - 1.0) * tanFov;
+                    const double screenPlaneY = (2.0 * ((y + 0.5) / dstPixelmap.height()) - 1.0) * tanFov;
 
                     vector3_s<double> v = vector3_s<double>{screenPlaneX, screenPlaneY, camera.zoom};
                     v *= viewMatrix;
@@ -201,17 +201,17 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                     // Aim the ray at this pixel.
                     ray.dir = v.normalized();
 
-                    real rayHeight = abs(ray.dir.dot(vector3_s<double>{0, 1, 0}));
+                    double rayHeight = abs(ray.dir.dot(vector3_s<double>{0, 1, 0}));
 
                     // The base horizon color when looking directly into the horizon.
-                    color_rgba_s<u8> horizonColor = {125, 145, 175, 255};
+                    color_rgba_s<uint8_t> horizonColor = {125, 145, 175, 255};
 
                     int colorAttenuation = std::min(115, (int)floor(190 * rayHeight * 1.1));
 
-                    const color_rgba_s<u8> color = {u8(horizonColor.r - colorAttenuation),
-                                                    u8(horizonColor.g - colorAttenuation),
-                                                    u8(horizonColor.b - colorAttenuation),
-                                                    255};
+                    const color_rgba_s<uint8_t> color = {uint8_t(horizonColor.r - colorAttenuation),
+                                                         uint8_t(horizonColor.g - colorAttenuation),
+                                                         uint8_t(horizonColor.b - colorAttenuation),
+                                                         255};
 
                     const double depth = std::numeric_limits<double>::max();
 

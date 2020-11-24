@@ -22,7 +22,7 @@ static QImage CANVAS;
 // The amount by which the mouse cursor has moved since the last event update.
 static QPoint MOUSE_MOVE_DELTA;
 
-Window::Window(const uint width, const uint height, const char *const title)
+Window::Window(const unsigned width, const unsigned height, const char *const title)
 {
     // Initialize the window.
     this->setAttribute(Qt::WA_OpaquePaintEvent, true);  // We'll repaint the entire window every time.
@@ -49,7 +49,7 @@ Window::~Window()
     return;
 }
 
-void Window::set_canvas_image(const image_s<u8> &image)
+void Window::set_canvas_image(const image_s<uint8_t> &image)
 {
     k_assert(image.bpp() == 32, "Expected a 32-bit image.");
 

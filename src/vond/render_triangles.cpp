@@ -64,7 +64,7 @@ std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &trian
                                         matrix44_translation_s(-camera.pos.x, -camera.pos.y, -camera.pos.z);
 
         const matrix44_s perspectiveMatrix = matrix44_perspective_s(DEG_TO_RAD(camera.fov),
-                                                                    (real(screenWidth) / screenHeight),
+                                                                    (double(screenWidth) / screenHeight),
                                                                     Z_NEAR, Z_FAR);
 
         toClipSpace = perspectiveMatrix * cameraMatrix;
@@ -106,7 +106,7 @@ std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &trian
             tri.v[2].transform(toScreenSpace);
 
             // Perspective division.
-            for (uint i = 0; i < 3; i++)
+            for (unsigned i = 0; i < 3; i++)
             {
                 tri.v[i].pos.x /= tri.v[i].w;
                 tri.v[i].pos.y /= tri.v[i].w;
@@ -134,11 +134,11 @@ std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &trian
     return transformedTris;
 }
 
-static void rs_fill_tri_row(const uint row,
+static void rs_fill_tri_row(const unsigned row,
                             const interpolation_params_s &rowLeftParams,
                             const interpolation_params_s &rowRightParams,
                             const triangle_material_s &triangleMaterial,
-                            image_s<u8> &dstPixelmap,
+                            image_s<uint8_t> &dstPixelmap,
                             image_s<double> &dstDepthmap)
 {
     if (rowRightParams.startX < rowLeftParams.startX)
@@ -169,7 +169,7 @@ static void rs_fill_tri_row(const uint row,
     if (currentParams.startX < 0)
     {
         // Move the parameters accordingly.
-        const uint diff = abs(currentParams.startX);
+        const unsigned diff = abs(currentParams.startX);
         currentParams.u += (paramDeltas.u * diff);
         currentParams.v += (paramDeltas.v * diff);
         currentParams.depth += (paramDeltas.depth * diff);
@@ -181,12 +181,12 @@ static void rs_fill_tri_row(const uint row,
         endingParams.startX = (dstPixelmap.width() - 1);
     }
 
-    uint screenPixIdx = (currentParams.startX + row * dstPixelmap.width());
+    unsigned screenPixIdx = (currentParams.startX + row * dstPixelmap.width());
 
     // Solid fill.
     if (!triangleMaterial.texture)
     {
-        const color_rgba_s<u8> color = triangleMaterial.baseColor;
+        const color_rgba_s<uint8_t> color = triangleMaterial.baseColor;
 
         for (int x = currentParams.startX; x <= endingParams.startX; x++)
         {
@@ -207,9 +207,9 @@ static void rs_fill_tri_row(const uint row,
     {
         for (int x = currentParams.startX; x <= endingParams.startX; x++)
         {
-            const uint u = ((currentParams.u / currentParams.invW) * triangleMaterial.texture->width());
-            const uint v = ((currentParams.v / currentParams.invW) * triangleMaterial.texture->height());
-            const color_rgba_s<u8> color = triangleMaterial.texture->pixel_at(u, v);
+            const unsigned u = ((currentParams.u / currentParams.invW) * triangleMaterial.texture->width());
+            const unsigned v = ((currentParams.v / currentParams.invW) * triangleMaterial.texture->height());
+            const color_rgba_s<uint8_t> color = triangleMaterial.texture->pixel_at(u, v);
             const double depth = (currentParams.depth / currentParams.invW);
 
             if (dstDepthmap.pixel_at(x, row).r > depth)
@@ -235,7 +235,7 @@ static void fill_split_triangle(const vertex4_s *peak,
                                 const vertex4_s *base1,
                                 const vertex4_s *base2,
                                 const triangle_material_s &triangleMaterial,
-                                image_s<u8> &dstPixelmap,
+                                image_s<uint8_t> &dstPixelmap,
                                 image_s<double> &dstDepthmap)
 {
     k_assert((base1->pos.y == base2->pos.y),
@@ -332,7 +332,7 @@ static void fill_split_triangle(const vertex4_s *peak,
 }
 
 void kr_rasterize_triangle(const triangle_s &tri,
-                           image_s<u8> &dstPixelmap,
+                           image_s<uint8_t> &dstPixelmap,
                            image_s<double> &dstDepthmap)
 {
     // Sort the triangle's vertices by height. ('High' here means low y, such that
@@ -356,7 +356,7 @@ void kr_rasterize_triangle(const triangle_s &tri,
     // Split the triangle into two parts, one pointing up and the other down.
     // (Split algo from Bastian Molkenthin's www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html.)
     vertex4_s splitBase;
-    const double splitRatio = ((mid->pos.y - high->pos.y) / (real)(low->pos.y - high->pos.y));
+    const double splitRatio = ((mid->pos.y - high->pos.y) / (double)(low->pos.y - high->pos.y));
     splitBase.pos.x = (high->pos.x + ((low->pos.x - high->pos.x) * splitRatio));
     splitBase.pos.y = mid->pos.y;
     splitBase.w = std::lerp(high->w, low->w, splitRatio);
@@ -372,7 +372,7 @@ void kr_rasterize_triangle(const triangle_s &tri,
 }
 
 void kr_draw_triangles(const std::vector<triangle_s> &triangles,
-                       image_s<u8> &dstPixelmap,
+                       image_s<uint8_t> &dstPixelmap,
                        image_s<double> &dstDepthmap,
                        const camera_s &camera)
 {

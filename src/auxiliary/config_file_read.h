@@ -17,7 +17,7 @@
 struct config_file_line_s
 {
     char command = 0;
-    uint indentLevel = 0;
+    unsigned indentLevel = 0;
     std::vector<std::string> params;
 };
 
@@ -32,7 +32,7 @@ public:
         return fileName;
     }
 
-    uint current_line_num(void) const
+    unsigned current_line_num(void) const
     {
         return curLineNum;
     }
@@ -59,7 +59,7 @@ private:
 
     const std::string fileName;
     std::ifstream fileStream;
-    uint curLineNum = 0;
+    unsigned curLineNum = 0;
 
     // Returns the parameters in the given line of config text. For instance, the
     // line "v:-50;108;1" would be returned as the strings "-50", "108", and "1".

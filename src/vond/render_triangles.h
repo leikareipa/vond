@@ -18,7 +18,7 @@ class framebuffer_s;
 struct camera_s;
 
 void kr_draw_triangles(const std::vector<triangle_s> &triangles,
-                       image_s<u8> &dstPixelmap,
+                       image_s<uint8_t> &dstPixelmap,
                        image_s<double> &dstDepthmap,
                        const camera_s &camera);
 

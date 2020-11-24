@@ -12,8 +12,8 @@
 struct camera_s;
 
 void kr_draw_landscape(const image_s<double> &srcHeightmap,
-                       const image_s<u8> &srcTexture,
-                       image_s<u8> &dstPixelmap,
+                       const image_s<uint8_t> &srcTexture,
+                       image_s<uint8_t> &dstPixelmap,
                        image_s<double> &dstDepthmap,
                        const camera_s &camera);
 

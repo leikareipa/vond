@@ -11,7 +11,6 @@
 #include <QColor>
 #include "vond/vector.h"
 #include "vond/color.h"
-#include "types.h"
 
 // Determines how image coordinates that fall outside of the image's dimensions
 // are handled.
@@ -24,7 +23,7 @@ enum class image_bounds_checking_mode_e
 template <typename T>
 struct image_s
 {
-    image_s(const uint width, const uint height, const uint bpp) :
+    image_s(const unsigned width, const unsigned height, const unsigned bpp) :
         width_(width),
         height_(height),
         bpp_(bpp),
@@ -48,9 +47,9 @@ struct image_s
         k_assert(!qImage.isNull(), "Was asked to create an image out of a null QImage.");
 
         // Copy the pixels over.
-        for (uint y = 0; y < this->height(); y++)
+        for (unsigned y = 0; y < this->height(); y++)
         {
-            for (uint x = 0; x < this->width(); x++)
+            for (unsigned x = 0; x < this->width(); x++)
             {
                 const QColor sourcePixel = qImage.pixel(x, y);
                 color_rgba_s<T> &targetPixel = this->pixel_at(x, y);
@@ -92,17 +91,17 @@ struct image_s
         return;
     }
 
-    uint width(void) const
+    unsigned width(void) const
     {
         return this->width_;
     }
 
-    uint height(void) const
+    unsigned height(void) const
     {
         return this->height_;
     }
 
-    uint bpp(void) const
+    unsigned bpp(void) const
     {
         return this->bpp_;
     }
@@ -124,8 +123,8 @@ struct image_s
         k_optional_assert(pixels, "Tried to access the pixels of a null image.");
         k_optional_assert(((x < this->width()) && (y < this->height())), "Tried to access an image pixel out of bounds.");
 
-        uint xFloored = floor(x);
-        uint yFloored = floor(y);
+        unsigned xFloored = floor(x);
+        unsigned yFloored = floor(y);
         const double xBias = (x - xFloored);
         const double yBias = (y - yFloored);
 
@@ -153,16 +152,16 @@ struct image_s
                 T(255)};
     }
 
-    const u8* pixel_array(void) const
+    const uint8_t* pixel_array(void) const
     {
-        return (u8*)pixels;
+        return (uint8_t*)pixels;
     }
 
     void fill(const color_rgba_s<T> &fillColor)
     {
-        for (uint y = 0; y < this->height(); y++)
+        for (unsigned y = 0; y < this->height(); y++)
         {
-            for (uint x = 0; x < this->width(); x++)
+            for (unsigned x = 0; x < this->width(); x++)
             {
                 this->pixel_at(x, y) = fillColor;
             }
@@ -212,9 +211,9 @@ struct image_s
     {
         image_s<T2> newImage(this->width(), this->height(), this->bpp());
 
-        for (uint y = 0; y < this->height(); y++)
+        for (unsigned y = 0; y < this->height(); y++)
         {
-            for (uint x = 0; x < this->width(); x++)
+            for (unsigned x = 0; x < this->width(); x++)
             {
                 const auto thisPixel = this->pixel_at(x, y);
 

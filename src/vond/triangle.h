@@ -9,8 +9,8 @@
 struct triangle_material_s
 {
     std::string name;
-    color_rgba_s<u8> baseColor;
-    image_s<u8> *texture = nullptr;
+    color_rgba_s<uint8_t> baseColor;
+    image_s<uint8_t> *texture = nullptr;
 };
 
 struct triangle_s

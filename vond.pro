@@ -24,7 +24,6 @@ SOURCES += src/auxiliary/main.cpp \
 HEADERS += \
     src/auxiliary/display.h \
     src/vond/camera.h \
-    src/types.h \
     src/auxiliary/display/qt/window.h \
     src/common.h \
     src/auxiliary/main.h \

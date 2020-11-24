@@ -78,24 +78,24 @@ int main(void)
         // The image buffers we'll render into. Note that the resolution determines
         // the render resolution, which is then upscaled to the resolution of the
         // window.
-        image_s<u8> pixelmap(320, 200, 32);
+        image_s<uint8_t> pixelmap(320, 200, 32);
         image_s<double> depthmap(pixelmap.width(), pixelmap.height(), pixelmap.bpp());
 
         // Load the landscape heightmap and texture map, as well as a polygon object
         // for testing.
         /// TODO: In the future, asset initialization will be handled somewhere other than here.
         image_s<double> heightmap(QImage("terrain_heightmap.png"));
-        image_s<u8> texture(QImage("terrain_texture.png"));
+        image_s<uint8_t> texture(QImage("terrain_texture.png"));
         std::vector<triangle_s> tris2 = kmesh_mesh_triangles("untitled.vmf");
 
         //heightmap.boundsCheckingMode = image_bounds_checking_mode_e::wrapped;
         //texture.boundsCheckingMode = image_bounds_checking_mode_e::wrapped;
 
-        for (uint loops = 0; loops < 3; loops++)
+        for (unsigned loops = 0; loops < 3; loops++)
         {
-            for (uint y = 1; y < heightmap.height()-1; y++)
+            for (unsigned y = 1; y < heightmap.height()-1; y++)
             {
-                for (uint x = 1; x < heightmap.width()-1; x++)
+                for (unsigned x = 1; x < heightmap.width()-1; x++)
                 {
                     heightmap.pixel_at(x, y) = heightmap.interpolated_pixel_at(x + 0.5, y + 0.5);
                 }
@@ -112,10 +112,10 @@ int main(void)
         while (!PROGRAM_EXIT_REQUESTED)
         {
             static std::deque<uint> fps;
-            static uint avgFPS = 0;
-            static uint frameCnt = 0;
+            static unsigned avgFPS = 0;
+            static unsigned frameCnt = 0;
 
-            uint renderTime, totalTime;
+            unsigned renderTime, totalTime;
             QElapsedTimer tim;
             tim.start();
 
@@ -142,7 +142,7 @@ int main(void)
             // Paint the new frame to screen.
             {
                 kd_update_display(pixelmap);
-                //kd_update_display(depthmap.as<u8>(0.7));
+                //kd_update_display(depthmap.as<uint8_t>(0.7));
 
                 totalTime = tim.elapsed();
             }
@@ -172,7 +172,7 @@ int main(void)
 
             // Statistics.
             {
-                const uint curFPS = (1000 / (totalTime? totalTime : 1));
+                const unsigned curFPS = (1000 / (totalTime? totalTime : 1));
 
                 // Calculate the average.
                 fps.push_back(curFPS);

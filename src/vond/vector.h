@@ -7,7 +7,6 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#include "types.h"
 #include "vond/matrix.h"
 
 template <typename T>

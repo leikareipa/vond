@@ -9,7 +9,6 @@
 
 #include <QWidget>
 #include "vond/vector.h"
-#include "types.h"
 
 template <typename T> struct image_s;
 
@@ -18,10 +17,10 @@ class Window : public QWidget
     Q_OBJECT
 
 public:
-    Window(const uint width, const uint height, const char *const title);
+    Window(const unsigned width, const unsigned height, const char *const title);
     ~Window();
 
-    void set_canvas_image(const image_s<u8> &image);
+    void set_canvas_image(const image_s<uint8_t> &image);
 
     vector2_s<int> mouse_move_delta();
 

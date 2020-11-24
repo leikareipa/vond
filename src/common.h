@@ -13,8 +13,6 @@
 #include <cassert>
 #include <cstdio>
 
-#include "../src/types.h"
-
 #define k_assert(condition, error_string) assert(condition && error_string);
 
 // For assertions in performance-critical sections; not guaranteed to evaluate

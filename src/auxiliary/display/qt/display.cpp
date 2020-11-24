@@ -21,7 +21,7 @@
 static Window *WINDOW = nullptr;
 
 // How many times per second the display is being updated.
-static uint FPS = 0;
+static unsigned FPS = 0;
 
 // For the Qt GUI to work, we need to have a QApplication object around. We just
 // pass some dummy args to it.
@@ -33,9 +33,9 @@ namespace app_n
     static QApplication *const APP = new QApplication(ARGC, &ARGV);
 }
 
-void kd_update_display(const image_s<u8> &pixelmap)
+void kd_update_display(const image_s<uint8_t> &pixelmap)
 {
-    static u32 fpsCnt = 0;
+    static uint32_t fpsCnt = 0;
 
     static QElapsedTimer fpsTimer;
     if (!fpsTimer.isValid())
@@ -66,7 +66,7 @@ void kd_update_input(camera_s *const camera)
 {
     // Rotate the camera's viewing direction.
     {
-        const real rotSpeed = 0.003;
+        const double rotSpeed = 0.003;
         const auto mouseDelta = WINDOW->mouse_move_delta();
 
         camera->orientation.x -= (mouseDelta.y * rotSpeed);
@@ -83,7 +83,7 @@ void kd_update_input(camera_s *const camera)
     return;
 }
 
-void kd_acquire_display(const uint width, const uint height, const char *const title)
+void kd_acquire_display(const unsigned width, const unsigned height, const char *const title)
 {
     printf("Acquiring the display...\n");
 
