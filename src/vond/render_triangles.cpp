@@ -11,6 +11,7 @@
 #include "vond/camera.h"
 #include "vond/render.h"
 #include "vond/image.h"
+#include "vond/rasterizer_barycentric.h"
 
 #define DEG_TO_RAD(deg) ((deg) * (M_PI / 180.0))
 
@@ -165,62 +166,40 @@ static void rs_fill_tri_row(const unsigned row,
         paramDeltas.invW = make_param_deltas(currentParams.invW, endingParams.invW);
     }
 
-    // Bounds-check, clip against the screen.
-    if (currentParams.startX < 0)
+    // Bounds-check: clip against screen edges.
     {
-        // Move the parameters accordingly.
-        const unsigned diff = abs(currentParams.startX);
-        currentParams.u += (paramDeltas.u * diff);
-        currentParams.v += (paramDeltas.v * diff);
-        currentParams.depth += (paramDeltas.depth * diff);
-        currentParams.invW += (paramDeltas.invW * diff);
-        currentParams.startX = 0;
-    }
-    if (endingParams.startX >= int(dstPixelmap.width()))
-    {
-        endingParams.startX = (dstPixelmap.width() - 1);
-    }
-
-    unsigned screenPixIdx = (currentParams.startX + row * dstPixelmap.width());
-
-    // Solid fill.
-    if (!triangleMaterial.texture)
-    {
-        const color_rgba_s<uint8_t> color = triangleMaterial.baseColor;
-
-        for (int x = currentParams.startX; x <= endingParams.startX; x++)
+        if (currentParams.startX < 0)
         {
-            const double depth = (currentParams.depth / currentParams.invW);
+            const unsigned diff = abs(currentParams.startX);
 
-            if (dstDepthmap.pixel_at(x, row).r > depth)
-            {
-                dstPixelmap.pixel_at(x, row) = color;
-                dstDepthmap.pixel_at(x, row) = {depth, depth, depth};
-            }
+            currentParams.increment(paramDeltas, diff);
+            currentParams.startX = 0;
+        }
 
-            currentParams.increment(paramDeltas);
-            screenPixIdx++;
+        if (endingParams.startX >= int(dstPixelmap.width()))
+        {
+            endingParams.startX = (dstPixelmap.width() - 1);
         }
     }
-    // Textured fill.
-    else
+
+    // Draw the row.
+    for (int x = currentParams.startX; x <= endingParams.startX; x++)
     {
-        for (int x = currentParams.startX; x <= endingParams.startX; x++)
+        const double depth = (currentParams.depth / currentParams.invW);
+
+        if (dstDepthmap.pixel_at(x, row).r > depth)
         {
-            const unsigned u = ((currentParams.u / currentParams.invW) * triangleMaterial.texture->width());
-            const unsigned v = ((currentParams.v / currentParams.invW) * triangleMaterial.texture->height());
-            const color_rgba_s<uint8_t> color = triangleMaterial.texture->pixel_at(u, v);
-            const double depth = (currentParams.depth / currentParams.invW);
+            const double u = ((currentParams.u / currentParams.invW) * triangleMaterial.texture->width());
+            const double v = ((currentParams.v / currentParams.invW) * triangleMaterial.texture->height());
+            const color_rgba_s<uint8_t> color = triangleMaterial.texture
+                                                ? triangleMaterial.texture->pixel_at(u, v)
+                                                : triangleMaterial.baseColor;
 
-            if (dstDepthmap.pixel_at(x, row).r > depth)
-            {
-                dstPixelmap.pixel_at(x, row) = color;
-                dstDepthmap.pixel_at(x, row) = {depth, depth, depth};
-            }
-
-            currentParams.increment(paramDeltas);
-            screenPixIdx++;
+            dstPixelmap.pixel_at(x, row) = color;
+            dstDepthmap.pixel_at(x, row) = {depth, depth, depth};
         }
+
+        currentParams.increment(paramDeltas);
     }
 
     return;
@@ -380,6 +359,7 @@ void kr_draw_triangles(const std::vector<triangle_s> &triangles,
 
     for (const auto &tri: transformedTriangles)
     {
+        //Rasterize(tri, dstPixelmap, dstDepthmap);
         kr_rasterize_triangle(tri, dstPixelmap, dstDepthmap);
     }
 
