@@ -13,6 +13,8 @@ INCLUDEPATH += $$PWD/src/
 SOURCES += src/auxiliary/main.cpp \
     src/auxiliary/display/qt/display.cpp \
     src/auxiliary/display/qt/window.cpp \
+    src/vond/rasterizer_barycentric.cpp \
+    src/vond/rasterizer_scanline.cpp \
     src/vond/render_landscape.cpp \
     src/auxiliary/display/qt/w_opengl.cpp \
     src/auxiliary/ui/text.cpp \
@@ -27,6 +29,9 @@ HEADERS += \
     src/auxiliary/display/qt/window.h \
     src/vond/assert.h \
     src/auxiliary/main.h \
+    src/vond/rasterizer_barycentric.h \
+    src/vond/rasterizer_scanline.h \
+    src/vond/rect.h \
     src/vond/render_landscape.h \
     src/vond/image.h \
     src/vond/matrix.h \

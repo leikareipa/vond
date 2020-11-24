@@ -15,7 +15,7 @@ struct triangle_material_s
 
 struct triangle_s
 {
-    vertex4_s v[3];
+    std::array<vertex4_s, 3> v;
     triangle_material_s material;
 };
 

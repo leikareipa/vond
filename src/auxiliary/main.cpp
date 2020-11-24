@@ -104,7 +104,7 @@ int main(void)
 
         /// TODO: In the future, camera initialization will be handled somewhere other than here.
         camera_s camera;
-        camera.pos = {512, 260, 512};
+        camera.pos = {512, 160, 512};
         camera.orientation = {0.5, -0.3, 0};
         camera.zoom = 1;
         camera.fov = 70;

@@ -44,6 +44,13 @@ struct vector3_s
         return ((this->x * other.x) + (this->y * other.y) + (this->z * other.z));
     }
 
+    vector3_s<T> cross(const vector3_s &other) const
+    {
+        return {((this->y * other.z) - (this->z * other.y)),
+                ((this->z * other.x) - (this->x * other.z)),
+                ((this->x * other.y) - (this->y * other.x))};
+    }
+
     double length(void) const
     {
         return sqrt((this->x * this->x) + (this->y * this->y) + (this->z * this->z));
