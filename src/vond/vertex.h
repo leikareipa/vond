@@ -10,7 +10,7 @@
 #include "vond/vector.h"
 #include "vond/matrix.h"
 
-struct vertex4_s
+struct vertex_s
 {
     vector3_s<double> pos = {0, 0, 0};
     double w = 1;

@@ -136,7 +136,7 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                     triangle_material_s material = knownMaterials.at(line.params.at(0));
 
                     // Get all vertices of this polygon.
-                    std::vector<vertex4_s> vertices;
+                    std::vector<vertex_s> vertices;
                     line = meshFile.next_line();
                     while (!meshFile.file_is_at_end() &&
                            line.command == 'v' &&
@@ -147,7 +147,7 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                         meshFile.error_if_not(line.params.size() == 3, "Expected vertices to have three coordinates.");
 
                         // Extract the vertex data from the line.
-                        vertex4_s vert;
+                        vertex_s vert;
                         {
                             // In case no u,v coordinates are defined for this
                             // vertex later on, pre-initialize them to 0 here.

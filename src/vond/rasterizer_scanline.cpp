@@ -85,9 +85,9 @@ static void fill_triangle_row(const unsigned row,
 // the y axis (you'd first split your triangle along y, then submit the two pieces to
 // this function individually).
 //
-static void fill_split_triangle(const vertex4_s *peak,
-                                const vertex4_s *base1,
-                                const vertex4_s *base2,
+static void fill_split_triangle(const vertex_s *peak,
+                                const vertex_s *base1,
+                                const vertex_s *base2,
                                 const triangle_material_s &triangleMaterial,
                                 image_s<uint8_t> &dstPixelmap,
                                 image_s<double> &dstDepthmap)
@@ -102,8 +102,8 @@ static void fill_split_triangle(const vertex4_s *peak,
     bool isDownTri = false;
 
     // Figure out which corner of the base is on the left/right in screen space.
-    const vertex4_s *leftVert = base2;
-    const vertex4_s *rightVert = base1;
+    const vertex_s *leftVert = base2;
+    const vertex_s *rightVert = base1;
     if (base1->pos.x < base2->pos.x)
     {
         leftVert = base1;
@@ -191,9 +191,9 @@ void kr_scanline_rasterize_triangle(const triangle_s &tri,
 {
     // Sort the triangle's vertices by height. ('High' here means low y, such that
     // y = 0 is the top of the screen.)
-    const vertex4_s *high = &tri.v[0];
-    const vertex4_s *mid = &tri.v[1];
-    const vertex4_s *low = &tri.v[2];
+    const vertex_s *high = &tri.v[0];
+    const vertex_s *mid = &tri.v[1];
+    const vertex_s *low = &tri.v[2];
     if (low->pos.y < mid->pos.y)
     {
         std::swap(low, mid);
@@ -209,7 +209,7 @@ void kr_scanline_rasterize_triangle(const triangle_s &tri,
 
     // Split the triangle into two parts, one pointing up and the other down.
     // (Split algo from Bastian Molkenthin's www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html.)
-    vertex4_s splitBase;
+    vertex_s splitBase;
     const double splitRatio = ((mid->pos.y - high->pos.y) / (double)(low->pos.y - high->pos.y));
     splitBase.pos.x = (high->pos.x + ((low->pos.x - high->pos.x) * splitRatio));
     splitBase.pos.y = mid->pos.y;
