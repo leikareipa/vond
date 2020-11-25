@@ -14,7 +14,6 @@ struct vertex4_s
 {
     vector3_s<double> pos = {0, 0, 0};
     double w = 1;
-    double depth = 0;
     double uv[2] = {0, 0};
 
     void transform(const matrix44_s &mat)

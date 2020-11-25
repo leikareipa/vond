@@ -41,7 +41,7 @@ std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &trian
                                                                     (double(screenWidth) / screenHeight),
                                                                     Z_NEAR, Z_FAR);
 
-        toClipSpace = perspectiveMatrix * cameraMatrix;
+        toClipSpace = (perspectiveMatrix * cameraMatrix);
     }
 
     const matrix44_s toScreenSpace = matrix44_screen_space_s((screenWidth / 2.0),
@@ -52,6 +52,7 @@ std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &trian
     std::vector<triangle_s> transformedTris;
     {
         unsigned idx = 0;
+        double vertDepths[3];
 
         for (auto tri: triangles)
         {
@@ -59,9 +60,9 @@ std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &trian
             tri.v[1].transform(toWorldSpace);
             tri.v[2].transform(toWorldSpace);
 
-            tri.v[0].depth = tri.v[0].pos.distance_to(camera.pos);
-            tri.v[1].depth = tri.v[1].pos.distance_to(camera.pos);
-            tri.v[2].depth = tri.v[2].pos.distance_to(camera.pos);
+            vertDepths[0] = tri.v[0].pos.distance_to(camera.pos);
+            vertDepths[1] = tri.v[1].pos.distance_to(camera.pos);
+            vertDepths[2] = tri.v[2].pos.distance_to(camera.pos);
 
             tri.v[0].transform(toClipSpace);
             tri.v[1].transform(toClipSpace);
@@ -100,6 +101,10 @@ std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &trian
                     continue;
                 }
             }
+
+            tri.v[0].pos.z = vertDepths[0];
+            tri.v[1].pos.z = vertDepths[1];
+            tri.v[2].pos.z = vertDepths[2];
 
             transformedTris.push_back(tri);
         }

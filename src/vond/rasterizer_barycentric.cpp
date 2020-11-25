@@ -155,7 +155,7 @@ void kr_barycentric_rasterize_triangle(const triangle_s &tri,
 
                 spanDone = true;
 
-                const double depth = BARY_INTERPOLATE(depth);
+                const double depth = BARY_INTERPOLATE(pos.z);
 
                 if (depth < dstDepthmap.pixel_at(x, y).r)
                 {

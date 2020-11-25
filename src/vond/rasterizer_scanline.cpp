@@ -149,8 +149,8 @@ static void fill_split_triangle(const vertex4_s *peak,
         std::tie(paramsLeft.v, deltasLeft.v) = make_params((leftVert->uv[1] / leftVert->w), (peak->uv[1] / peak->w), !isDownTri);
         std::tie(paramsRight.u, deltasRight.u) = make_params((rightVert->uv[0] / rightVert->w), (peak->uv[0] / peak->w), !isDownTri);
         std::tie(paramsRight.v, deltasRight.v) = make_params((rightVert->uv[1] / rightVert->w), (peak->uv[1] / peak->w), !isDownTri);
-        std::tie(paramsLeft.depth, deltasLeft.depth) = make_params((leftVert->depth / leftVert->w), (peak->depth / peak->w), !isDownTri);
-        std::tie(paramsRight.depth, deltasRight.depth) = make_params((rightVert->depth / rightVert->w), (peak->depth / peak->w), !isDownTri);
+        std::tie(paramsLeft.depth, deltasLeft.depth) = make_params((leftVert->pos.z / leftVert->w), (peak->pos.z / peak->w), !isDownTri);
+        std::tie(paramsRight.depth, deltasRight.depth) = make_params((rightVert->pos.z / rightVert->w), (peak->pos.z / peak->w), !isDownTri);
     }
 
     // Bounds-check to make sure we're not going to draw outside of the screen area
@@ -213,8 +213,8 @@ void kr_scanline_rasterize_triangle(const triangle_s &tri,
     const double splitRatio = ((mid->pos.y - high->pos.y) / (double)(low->pos.y - high->pos.y));
     splitBase.pos.x = (high->pos.x + ((low->pos.x - high->pos.x) * splitRatio));
     splitBase.pos.y = mid->pos.y;
+    splitBase.pos.z = std::lerp(high->pos.z, low->pos.z, splitRatio);
     splitBase.w = std::lerp(high->w, low->w, splitRatio);
-    splitBase.depth = std::lerp(high->depth, low->depth, splitRatio);
     splitBase.uv[0] = std::lerp(high->uv[0], low->uv[0], splitRatio);
     splitBase.uv[1] = std::lerp(high->uv[1], low->uv[1], splitRatio);
 
