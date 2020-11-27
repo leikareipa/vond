@@ -13,8 +13,16 @@ bool kinput_is_moving_forward(void);
 
 bool kinput_is_moving_backward(void);
 
-void kinput_move_camera_forward(void);
+bool kinput_is_moving_left(void);
 
-void kinput_move_camera_backward(void);
+bool kinput_is_moving_right(void);
+
+void kinput_move_camera_forward(const bool isMoving);
+
+void kinput_move_camera_backward(const bool isMoving);
+
+void kinput_move_camera_left(const bool isMoving);
+
+void kinput_move_camera_right(const bool isMoving);
 
 #endif

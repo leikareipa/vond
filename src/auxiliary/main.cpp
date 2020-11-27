@@ -30,7 +30,7 @@ static void init_system(void)
 {
     printf("Initializing the program...\n");
 
-    kd_acquire_display(1280, 800, "\"Vond\" by Tarpeeksi Hyvae Soft");
+    kd_acquire_display(1600, 900, "\"Vond\" by Tarpeeksi Hyvae Soft");
 
     return;
 }
@@ -91,23 +91,12 @@ int main(void)
         //heightmap.boundsCheckingMode = image_bounds_checking_mode_e::wrapped;
         //texture.boundsCheckingMode = image_bounds_checking_mode_e::wrapped;
 
-        for (unsigned loops = 0; loops < 3; loops++)
-        {
-            for (unsigned y = 1; y < heightmap.height()-1; y++)
-            {
-                for (unsigned x = 1; x < heightmap.width()-1; x++)
-                {
-                    heightmap.pixel_at(x, y) = heightmap.interpolated_pixel_at(x + 0.5, y + 0.5);
-                }
-            }
-        }
-
         /// TODO: In the future, camera initialization will be handled somewhere other than here.
         camera_s camera;
         camera.pos = {512, 160, 512};
         camera.orientation = {0.5, -0.3, 0};
         camera.zoom = 1;
-        camera.fov = 70;
+        camera.fov = 80;
 
         while (!PROGRAM_EXIT_REQUESTED)
         {
@@ -124,7 +113,6 @@ int main(void)
                 depthmap.fill({std::numeric_limits<double>::max()});
                 pixelmap.fill({0});
                 ktext_clear_ui_text_entries();
-                kinput_reset_input_state();
             }
 
             // Create the new frame.
@@ -150,24 +138,20 @@ int main(void)
             // Handle any new user input.
             /// TODO: Implement proper input handling. This works for testing, though.
             {
-                if (kinput_is_moving_forward())
-                {
-                    vector3_s<double> dir = vector3_s<double>{0, 0, 1};
-                    dir *= matrix44_rotation_s(0, camera.orientation.y, 0) * matrix44_rotation_s(camera.orientation.x, 0, 0);
-                    dir = dir.normalized();
-                    camera.pos.x += dir.x;
-                    camera.pos.y += dir.y;
-                    camera.pos.z += dir.z;
-                }
-                else if (kinput_is_moving_backward())
-                {
-                    vector3_s<double> dir = vector3_s<double>{0, 0, -1};
-                    dir *= matrix44_rotation_s(0, camera.orientation.y, 0) * matrix44_rotation_s(camera.orientation.x, 0, 0);
-                    dir = dir.normalized();
-                    camera.pos.x += dir.x;
-                    camera.pos.y += dir.y;
-                    camera.pos.z += dir.z;
-                }
+                vector3_s<double> dir = vector3_s<double>{0, 0, 0};
+
+                if (kinput_is_moving_forward()) dir.z = 1;
+                if (kinput_is_moving_backward()) dir.z = -1;
+                if (kinput_is_moving_right()) dir.x = 1;
+                if (kinput_is_moving_left()) dir.x = -1;
+
+                dir *= (matrix44_rotation_s(0, camera.orientation.y, 0) * matrix44_rotation_s(camera.orientation.x, 0, 0));
+                dir = dir.normalized()*0.15;
+                camera.pos.x += dir.x;
+                camera.pos.y += dir.y;
+                camera.pos.z += dir.z;
+
+                camera.pos.y = heightmap.interpolated_pixel_at(camera.pos.x, camera.pos.z)[0] / 1.0 + 0.5;
             }
 
             // Statistics.

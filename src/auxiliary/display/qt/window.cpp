@@ -95,8 +95,26 @@ bool Window::eventFilter(QObject *, QEvent *event)
         switch (e->key())
         {
             /// Temp hack for movement. Good enough for testing, but will be replaced later.
-            case Qt::Key_E: { kinput_move_camera_forward(); break; }
-            case Qt::Key_D: { kinput_move_camera_backward(); break; }
+            case Qt::Key_E: { kinput_move_camera_forward(true); break; }
+            case Qt::Key_D: { kinput_move_camera_backward(true); break; }
+            case Qt::Key_S: { kinput_move_camera_left(true); break; }
+            case Qt::Key_F: { kinput_move_camera_right(true); break; }
+            default: break;
+        }
+
+        return true;
+    }
+    else if (event->type() == QEvent::KeyRelease)
+    {
+        QKeyEvent *e = (QKeyEvent*)event;
+
+        switch (e->key())
+        {
+            /// Temp hack for movement. Good enough for testing, but will be replaced later.
+            case Qt::Key_E: { kinput_move_camera_forward(false); break; }
+            case Qt::Key_D: { kinput_move_camera_backward(false); break; }
+            case Qt::Key_S: { kinput_move_camera_left(false); break; }
+            case Qt::Key_F: { kinput_move_camera_right(false); break; }
             default: break;
         }
 
