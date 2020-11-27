@@ -2,14 +2,13 @@
 #define TRIANGLE_H
 
 #include <string>
-#include "vond/assert.h"
 #include "vond/image.h"
 #include "vond/vertex.h"
 
 struct triangle_material_s
 {
-    std::string name;
-    color_rgba_s<uint8_t> baseColor;
+    std::string name = "Unnamed material";
+    color_s<uint8_t, 4> baseColor = {0};
     image_s<uint8_t> *texture = nullptr;
 };
 

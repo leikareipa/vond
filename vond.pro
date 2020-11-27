@@ -29,6 +29,7 @@ HEADERS += \
     src/auxiliary/display/qt/window.h \
     src/vond/assert.h \
     src/auxiliary/main.h \
+    src/vond/color.h \
     src/vond/rasterizer_barycentric.h \
     src/vond/rasterizer_scanline.h \
     src/vond/rect.h \

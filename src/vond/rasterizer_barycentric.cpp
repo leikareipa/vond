@@ -111,7 +111,7 @@ void kr_barycentric_rasterize_triangle(const triangle_s &tri,
         int x = precomputedParams.boundingRect.left();
         int y = precomputedParams.boundingRect.top();
 
-        if (depth < dstDepthmap.pixel_at(x, y).r)
+        if (depth < dstDepthmap.pixel_at(x, y)[0])
         {
             const double u = (((tri.v[0].uv[0] + tri.v[1].uv[0] + tri.v[2].uv[0]) / 3.0) * tri.material.texture->width());
             const double v = (((tri.v[0].uv[1] + tri.v[1].uv[1] + tri.v[2].uv[1]) / 3.0) * tri.material.texture->height());
@@ -162,7 +162,7 @@ void kr_barycentric_rasterize_triangle(const triangle_s &tri,
 
                 const double depth = BARY_INTERPOLATE(pos.z);
 
-                if (depth < dstDepthmap.pixel_at(x, y).r)
+                if (depth < dstDepthmap.pixel_at(x, y)[0])
                 {
                     const double u = (BARY_INTERPOLATE(uv[0]) * tri.material.texture->width());
                     const double v = (BARY_INTERPOLATE(uv[1]) * tri.material.texture->height());

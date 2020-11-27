@@ -147,8 +147,8 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
 
                         // Get the height of the voxel that's directly below this ray.
                         double voxelHeight = (rayDepth < 500)
-                                           ? srcHeightmap.interpolated_pixel_at(ray.pos.x, ray.pos.z).r
-                                           : srcHeightmap.pixel_at(ray.pos.x, ray.pos.z).r;
+                                           ? srcHeightmap.interpolated_pixel_at(ray.pos.x, ray.pos.z)[0]
+                                           : srcHeightmap.pixel_at(ray.pos.x, ray.pos.z)[0];
 
                         // Draw the voxel if the ray intersects it (i.e. if the voxel
                         // is taller than the ray's current height).
@@ -157,9 +157,9 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                             const double depth = ray.pos.distance_to(camera.pos);
                             const double distanceFog = std::max(1.0, std::min(2.0, (depth / 2200.0)));
 
-                            color_rgba_s<uint8_t> color = (rayDepth < 3000)
-                                                          ? srcTexture.interpolated_pixel_at(ray.pos.x, ray.pos.z)
-                                                          : srcTexture.pixel_at(ray.pos.x, ray.pos.z);
+                            color_s<uint8_t, 4> color = (rayDepth < 3000)
+                                                        ? srcTexture.interpolated_pixel_at(ray.pos.x, ray.pos.z)
+                                                        : srcTexture.pixel_at(ray.pos.x, ray.pos.z);
 
                             //color.b = std::min(255.0, (color.b * distanceFog));
 
@@ -169,6 +169,7 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                             #ifdef REDUCED_DISTANCE_DETAIL
                                 // For reduced resolution, draw this pixel double-wide.
                                 if ((rayDepth > 2000) && (x % 2 != 0) && (x < (dstPixelmap.width() - 1)))
+
                                 {
                                     dstPixelmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = color;
                                     dstDepthmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = {depth, depth, depth};
@@ -204,14 +205,14 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                     double rayHeight = abs(ray.dir.dot(vector3_s<double>{0, 1, 0}));
 
                     // The base horizon color when looking directly into the horizon.
-                    color_rgba_s<uint8_t> horizonColor = {125, 145, 175, 255};
+                    color_s<uint8_t, 4> horizonColor = {125, 145, 175, 255};
 
                     int colorAttenuation = std::min(115, (int)floor(190 * rayHeight * 1.1));
 
-                    const color_rgba_s<uint8_t> color = {uint8_t(horizonColor.r - colorAttenuation),
-                                                         uint8_t(horizonColor.g - colorAttenuation),
-                                                         uint8_t(horizonColor.b - colorAttenuation),
-                                                         255};
+                    const color_s<uint8_t, 4> color = {uint8_t(horizonColor[0] - colorAttenuation),
+                                                       uint8_t(horizonColor[1] - colorAttenuation),
+                                                       uint8_t(horizonColor[2] - colorAttenuation),
+                                                       255};
 
                     const double depth = std::numeric_limits<double>::max();
 

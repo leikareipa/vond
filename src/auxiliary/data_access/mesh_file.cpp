@@ -92,9 +92,9 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                         {
                             meshFile.error_if_not((line.params.size() == 3), "Expected three parameters for the material's color.");
 
-                            material.baseColor.r = std::stoi(line.params.at(0));
-                            material.baseColor.g = std::stoi(line.params.at(1));
-                            material.baseColor.b = std::stoi(line.params.at(2));
+                            material.baseColor[0] = std::stoi(line.params.at(0));
+                            material.baseColor[1] = std::stoi(line.params.at(1));
+                            material.baseColor[2] = std::stoi(line.params.at(2));
 
                             break;
                         }

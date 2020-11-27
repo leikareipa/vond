@@ -27,7 +27,7 @@ struct image_s
         width_(width),
         height_(height),
         bpp_(bpp),
-        pixels(new color_rgba_s<T>[width * height])
+        pixels(new color_s<T, 4>[width * height])
     {
         vond_assert(((this->width() > 0) &&
                   (this->height() > 0) &&
@@ -39,22 +39,27 @@ struct image_s
         return;
     }
 
-    // Creates a new image from a QImage, copying its pixels over.
-    //
     image_s(const QImage &qImage) :
-        image_s(uint(qImage.width()), uint(qImage.height()), uint(qImage.depth()))
+        image_s(this->from_qimage(qImage))
+    {
+        return;
+    }
+
+    static image_s<T> from_qimage(const QImage &qImage)
     {
         vond_assert(!qImage.isNull(), "Was asked to create an image out of a null QImage.");
 
+        image_s<T> image(qImage.width(), qImage.height(), qImage.depth());
+
         // Copy the pixels over.
-        for (unsigned y = 0; y < this->height(); y++)
+        for (unsigned y = 0; y < image.height(); y++)
         {
-            for (unsigned x = 0; x < this->width(); x++)
+            for (unsigned x = 0; x < image.width(); x++)
             {
                 const QColor sourcePixel = qImage.pixel(x, y);
-                color_rgba_s<T> &targetPixel = this->pixel_at(x, y);
+                color_s<T, 4> &targetPixel = image.pixel_at(x, y);
 
-                switch (qImage.depth())
+                switch (image.bpp())
                 {
                     case 8:
                     {
@@ -81,7 +86,7 @@ struct image_s
             }
         }
 
-        return;
+        return image;
     }
 
     ~image_s(void)
@@ -106,7 +111,7 @@ struct image_s
         return this->bpp_;
     }
 
-    color_rgba_s<T>& pixel_at(int x, int y) const
+    color_s<T,4>& pixel_at(int x, int y) const
     {
         std::tie(x, y) = this->bounds_checked_coordinates(x, y);
 
@@ -116,7 +121,7 @@ struct image_s
         return pixels[(x + y * this->width())];
     }
 
-    color_rgba_s<T> interpolated_pixel_at(double x, double y) const
+    color_s<T, 4> interpolated_pixel_at(double x, double y) const
     {
         std::tie(x, y) = this->bounds_checked_coordinates(x, y);
 
@@ -131,24 +136,18 @@ struct image_s
         if (xFloored >= (this->width() - 1)) xFloored = (this->width() - 2);
         if (yFloored >= (this->height() - 1)) yFloored = (this->height() - 2);
 
-        const T r1 = std::lerp(pixels[(xFloored       + yFloored       * this->width())].r,
-                               pixels[(xFloored       + (yFloored + 1) * this->width())].r, yBias);
-        const T r2 = std::lerp(pixels[((xFloored + 1) + yFloored       * this->width())].r,
-                               pixels[((xFloored + 1) + (yFloored + 1) * this->width())].r, yBias);
+        T c1[4], c2[4];
+        for (unsigned i = 0; i < 4; i++)
+        {
+            c1[i] = std::lerp(pixels[(xFloored       + yFloored       * this->width())][i],
+                              pixels[(xFloored       + (yFloored + 1) * this->width())][i], yBias);
+            c2[i] = std::lerp(pixels[((xFloored + 1) + yFloored       * this->width())][i],
+                              pixels[((xFloored + 1) + (yFloored + 1) * this->width())][i], yBias);
+        }
 
-        const T g1 = std::lerp(pixels[(xFloored       + yFloored       * this->width())].g,
-                               pixels[(xFloored       + (yFloored + 1) * this->width())].g, yBias);
-        const T g2 = std::lerp(pixels[((xFloored + 1) + yFloored       * this->width())].g,
-                               pixels[((xFloored + 1) + (yFloored + 1) * this->width())].g, yBias);
-
-        const T b1 = std::lerp(pixels[(xFloored       + yFloored       * this->width())].b,
-                               pixels[(xFloored       + (yFloored + 1) * this->width())].b, yBias);
-        const T b2 = std::lerp(pixels[((xFloored + 1) + yFloored       * this->width())].b,
-                               pixels[((xFloored + 1) + (yFloored + 1) * this->width())].b, yBias);
-
-        return {T(std::lerp(r1, r2, xBias)),
-                T(std::lerp(g1, g2, xBias)),
-                T(std::lerp(b1, b2, xBias)),
+        return {T(std::lerp(c1[0], c2[0], xBias)),
+                T(std::lerp(c1[1], c2[1], xBias)),
+                T(std::lerp(c1[2], c2[2], xBias)),
                 T(255)};
     }
 
@@ -157,7 +156,7 @@ struct image_s
         return (uint8_t*)pixels;
     }
 
-    void fill(const color_rgba_s<T> &fillColor)
+    void fill(const color_s<T, 4> &fillColor)
     {
         for (unsigned y = 0; y < this->height(); y++)
         {
@@ -235,7 +234,7 @@ private:
     const unsigned width_;
     const unsigned height_;
     const unsigned bpp_;
-    color_rgba_s<T> *const pixels;
+    color_s<T, 4> *const pixels;
 };
 
 #endif

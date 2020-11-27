@@ -28,7 +28,7 @@ std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &trian
     // Create a matrix by which we can transform the triangles into screen-space.
     matrix44_s toWorldSpace;
     {
-        const vector3_s<double> objectPos = {500, 120, 500};
+        const vector3_s<double> objectPos = {512, 110, 512};
         toWorldSpace = matrix44_translation_s(objectPos.x, objectPos.y, objectPos.z);
     }
 
@@ -123,7 +123,7 @@ void kr_draw_triangles(const std::vector<triangle_s> &triangles,
     for (const auto &tri: transformedTriangles)
     {
         kr_barycentric_rasterize_triangle(tri, dstPixelmap, dstDepthmap);
-        //kr_scanline_rasterize_triangle(tri, dstPixelmap, dstDepthmap);
+       // kr_scanline_rasterize_triangle(tri, dstPixelmap, dstDepthmap);
     }
 
     return;

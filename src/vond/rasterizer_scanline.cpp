@@ -62,13 +62,13 @@ static void fill_triangle_row(const unsigned row,
     {
         const double depth = (currentParams.depth / currentParams.invW);
 
-        if (dstDepthmap.pixel_at(x, row).r > depth)
+        if (dstDepthmap.pixel_at(x, row)[0] > depth)
         {
             const double u = ((currentParams.u / currentParams.invW) * triangleMaterial.texture->width());
             const double v = ((currentParams.v / currentParams.invW) * triangleMaterial.texture->height());
-            const color_rgba_s<uint8_t> color = triangleMaterial.texture
-                                                ? triangleMaterial.texture->interpolated_pixel_at(u, v)
-                                                : triangleMaterial.baseColor;
+            const color_s<uint8_t, 4> color = triangleMaterial.texture
+                                              ? triangleMaterial.texture->interpolated_pixel_at(u, v)
+                                              : triangleMaterial.baseColor;
 
             dstPixelmap.pixel_at(x, row) = color;
             dstDepthmap.pixel_at(x, row) = {depth, depth, depth};

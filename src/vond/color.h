@@ -7,10 +7,18 @@
 #ifndef COLOR_H
 #define COLOR_H
 
-template <typename T>
-struct color_rgba_s
+#include "vond/assert.h"
+
+template <typename T, size_t N>
+struct color_s
 {
-    T r, g, b, a;
+    T channel[N] = {0};
+
+    T& operator[](const size_t idx)
+    {
+        vond_optional_assert((idx < N), "Overflowing color channels.");
+        return this->channel[idx];
+    }
 };
 
 #endif
