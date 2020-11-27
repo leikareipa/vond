@@ -106,15 +106,20 @@ void kr_barycentric_rasterize_triangle(const triangle_s &tri,
     // Some triangles get sub-pixel small, so just draw them as single pixels.
     if (precomputedParams.isSubPixelSize)
     {
-        double z = (tri.v[0].pos.z + tri.v[1].pos.z + tri.v[2].pos.z) / 3;
+        double depth = ((tri.v[0].pos.z + tri.v[1].pos.z + tri.v[2].pos.z) / 3.0);
 
         int x = precomputedParams.boundingRect.left();
         int y = precomputedParams.boundingRect.top();
 
-        if (z < dstDepthmap.pixel_at(x, y).r)
+        if (depth < dstDepthmap.pixel_at(x, y).r)
         {
-            dstPixelmap.pixel_at(x, y) = {255, 255, 0};
-            dstDepthmap.pixel_at(x, y) = {0};
+            const double u = (((tri.v[0].uv[0] + tri.v[1].uv[0] + tri.v[2].uv[0]) / 3.0) * tri.material.texture->width());
+            const double v = (((tri.v[0].uv[1] + tri.v[1].uv[1] + tri.v[2].uv[1]) / 3.0) * tri.material.texture->height());
+
+            dstPixelmap.pixel_at(x, y) = tri.material.texture
+                                         ? tri.material.texture->interpolated_pixel_at(u, v)
+                                         : tri.material.baseColor;
+            dstDepthmap.pixel_at(x, y) = {depth, depth, depth};
         }
 
         return;
