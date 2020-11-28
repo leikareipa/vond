@@ -45,6 +45,13 @@ struct image_s
         return;
     }
 
+    ~image_s(void)
+    {
+        delete [] pixels;
+
+        return;
+    }
+
     static image_s<T, NumColorChannels> from_qimage(const QImage &qImage)
     {
         vond_assert(!qImage.isNull(), "Was asked to create an image out of a null QImage.");
@@ -94,13 +101,6 @@ struct image_s
         }
 
         return image;
-    }
-
-    ~image_s(void)
-    {
-        delete [] pixels;
-
-        return;
     }
 
     unsigned width(void) const
@@ -163,7 +163,7 @@ struct image_s
         return (uint8_t*)pixels;
     }
 
-    void fill_channel(const T fillValue, const unsigned channelIdx)
+    image_s<T, NumColorChannels>& fill_channel(const unsigned channelIdx, const T fillValue)
     {
         vond_assert((channelIdx < NumColorChannels), "Overflowing the color channel.");
 
@@ -175,10 +175,10 @@ struct image_s
             }
         }
 
-        return;
+        return *this;
     }
 
-    void fill(const color_s<T, NumColorChannels> &fillColor)
+    image_s<T, NumColorChannels>& fill(const color_s<T, NumColorChannels> &fillColor)
     {
         for (unsigned y = 0; y < this->height(); y++)
         {
@@ -188,7 +188,7 @@ struct image_s
             }
         }
 
-        return;
+        return *this;
     }
 
     // Returns the given image coordinates bounds-checked against the image's

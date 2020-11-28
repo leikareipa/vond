@@ -152,7 +152,7 @@ int main(void)
             // Paint the new frame to screen.
             {
                 kd_update_display(pixelmap);
-                //kd_update_display(depthmap.as<uint8_t>(0.7));
+                //kd_update_display(depthmap.as<uint8_t, 4>(0.7));
 
                 totalTime = tim.elapsed();
             }
@@ -168,12 +168,12 @@ int main(void)
                 if (kinput_is_moving_left()) dir.x = -1;
 
                 dir *= (matrix44_rotation_s(0, camera.orientation.y, 0) * matrix44_rotation_s(camera.orientation.x, 0, 0));
-                dir = dir.normalized()*0.15;
+                dir = dir.normalized();
                 camera.pos.x += dir.x;
                 camera.pos.y += dir.y;
                 camera.pos.z += dir.z;
 
-                camera.pos.y = terrainHeightmap.interpolated_pixel_at(camera.pos.x, camera.pos.z)[0] / 1.0 + 0.5;
+                //camera.pos.y = terrainHeightmap.interpolated_pixel_at(camera.pos.x, camera.pos.z)[0] / 1.0 + 0.5;
             }
 
             // Statistics.
