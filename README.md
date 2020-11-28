@@ -9,7 +9,7 @@ This software is currently in very early alpha.
 (Rendered by Vond with surface data from  the National Land Survey of Finland: orthophoto & elevation model 11/2020.)
 
 # Building
-To build Vond, you'll need Qt and OpenMP.
+To build Vond, you'll need a C++20-compatible compiler, Qt, and OpenMP.
 
 On Linux, do ```qmake && make```, or load the .pro file in Qt Creator.
 

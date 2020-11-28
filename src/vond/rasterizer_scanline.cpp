@@ -14,8 +14,8 @@ static void fill_triangle_row(const unsigned row,
                               const interpolation_params_s &rowLeftParams,
                               const interpolation_params_s &rowRightParams,
                               const triangle_material_s &triangleMaterial,
-                              image_s<uint8_t> &dstPixelmap,
-                              image_s<double> &dstDepthmap)
+                              image_s<uint8_t, 4> &dstPixelmap,
+                              image_s<double, 1> &dstDepthmap)
 {
     if (rowRightParams.startX < rowLeftParams.startX)
     {
@@ -71,7 +71,7 @@ static void fill_triangle_row(const unsigned row,
                                               : triangleMaterial.baseColor;
 
             dstPixelmap.pixel_at(x, row) = color;
-            dstDepthmap.pixel_at(x, row) = {depth, depth, depth};
+            dstDepthmap.pixel_at(x, row) = {depth};
         }
 
         currentParams.increment(paramDeltas);
@@ -89,8 +89,8 @@ static void fill_split_triangle(const vertex_s *peak,
                                 const vertex_s *base1,
                                 const vertex_s *base2,
                                 const triangle_material_s &triangleMaterial,
-                                image_s<uint8_t> &dstPixelmap,
-                                image_s<double> &dstDepthmap)
+                                image_s<uint8_t, 4> &dstPixelmap,
+                                image_s<double, 1> &dstDepthmap)
 {
     vond_assert((base1->pos.y == base2->pos.y),
              "The software triangle filler was given a malformed triangle. Expected a flat base.");
@@ -186,8 +186,8 @@ static void fill_split_triangle(const vertex_s *peak,
 }
 
 void kr_scanline_rasterize_triangle(const triangle_s &tri,
-                                    image_s<uint8_t> &dstPixelmap,
-                                    image_s<double> &dstDepthmap)
+                                    image_s<uint8_t, 4> &dstPixelmap,
+                                    image_s<double, 1> &dstDepthmap)
 {
     // Sort the triangle's vertices by height. ('High' here means low y, such that
     // y = 0 is the top of the screen.)

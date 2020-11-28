@@ -10,7 +10,7 @@
 #include <QWidget>
 #include "vond/vector.h"
 
-template <typename T> struct image_s;
+template <typename T, size_t NumColorChannels> struct image_s;
 
 class Window : public QWidget
 {
@@ -20,7 +20,7 @@ public:
     Window(const unsigned width, const unsigned height, const char *const title);
     ~Window();
 
-    void set_canvas_image(const image_s<uint8_t> &image);
+    void set_canvas_image(const image_s<uint8_t, 4> &image);
 
     vector2_s<int> mouse_move_delta();
 

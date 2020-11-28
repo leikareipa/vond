@@ -88,7 +88,7 @@ void OGLWidget::paintGL()
     return;
 }
 
-void OGLWidget::upload_canvas_texture(const image_s<uint8_t> &image)
+void OGLWidget::upload_canvas_texture(const image_s<uint8_t, 4> &image)
 {
     vond_optional_assert(image.pixel_array(), "Expected a non-null pixel array.");
 

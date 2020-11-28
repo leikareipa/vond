@@ -11,10 +11,10 @@
 
 struct camera_s;
 
-void kr_draw_landscape(const image_s<double> &srcHeightmap,
-                       const image_s<uint8_t> &srcTexture,
-                       image_s<uint8_t> &dstPixelmap,
-                       image_s<double> &dstDepthmap,
+void kr_draw_landscape(const image_s<double, 1> &srcHeightmap,
+                       const image_s<uint8_t, 4> &srcTexture,
+                       image_s<uint8_t, 4> &dstPixelmap,
+                       image_s<double, 1> &dstDepthmap,
                        const camera_s &camera);
 
 #endif

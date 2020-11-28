@@ -20,21 +20,21 @@ enum class image_bounds_checking_mode_e
     wrapped,
 };
 
-template <typename T>
+template <typename T, size_t NumColorChannels>
 struct image_s
 {
     image_s(const unsigned width, const unsigned height, const unsigned bpp) :
         width_(width),
         height_(height),
         bpp_(bpp),
-        pixels(new color_s<T, 4>[width * height])
+        pixels(new color_s<T, NumColorChannels>[width * height])
     {
         vond_assert(((this->width() > 0) &&
                   (this->height() > 0) &&
                   (this->bpp() > 0)),
                  "Invalid image resolution detected.");
 
-        this->fill({0, 0, 0, 255});
+        this->fill({0});
 
         return;
     }
@@ -45,11 +45,11 @@ struct image_s
         return;
     }
 
-    static image_s<T> from_qimage(const QImage &qImage)
+    static image_s<T, NumColorChannels> from_qimage(const QImage &qImage)
     {
         vond_assert(!qImage.isNull(), "Was asked to create an image out of a null QImage.");
 
-        image_s<T> image(qImage.width(), qImage.height(), qImage.depth());
+        image_s<T, NumColorChannels> image(qImage.width(), qImage.height(), qImage.depth());
 
         // Copy the pixels over.
         for (unsigned y = 0; y < image.height(); y++)
@@ -57,24 +57,31 @@ struct image_s
             for (unsigned x = 0; x < image.width(); x++)
             {
                 const QColor sourcePixel = qImage.pixel(x, y);
-                color_s<T, 4> &targetPixel = image.pixel_at(x, y);
+                color_s<T, NumColorChannels> &targetPixel = image.pixel_at(x, y);
 
                 switch (image.bpp())
                 {
                     case 8:
                     {
-                        targetPixel = {T(sourcePixel.value()),
-                                       T(sourcePixel.value()),
-                                       T(sourcePixel.value()),
-                                       T(255)};
+                        for (unsigned i = 0; i < NumColorChannels; i++)
+                        {
+                            targetPixel[i] = T(sourcePixel.value());
+                        }
+
                         break;
                     }
                     case 32:
                     {
-                        targetPixel = {T(sourcePixel.red()),
-                                       T(sourcePixel.green()),
-                                       T(sourcePixel.blue()),
-                                       T(255)};
+                        color_s<int, 4> c = {sourcePixel.red(),
+                                             sourcePixel.green(),
+                                             sourcePixel.blue(),
+                                             255};
+
+                        for (unsigned i = 0; i < NumColorChannels; i++)
+                        {
+                            targetPixel[i] = T(c[i % 4]);
+                        }
+
                         break;
                     }
                     default:
@@ -111,7 +118,7 @@ struct image_s
         return this->bpp_;
     }
 
-    color_s<T,4>& pixel_at(int x, int y) const
+    color_s<T, NumColorChannels>& pixel_at(int x, int y) const
     {
         std::tie(x, y) = this->bounds_checked_coordinates(x, y);
 
@@ -121,7 +128,7 @@ struct image_s
         return pixels[(x + y * this->width())];
     }
 
-    color_s<T, 4> interpolated_pixel_at(double x, double y) const
+    color_s<T, NumColorChannels> interpolated_pixel_at(double x, double y) const
     {
         std::tie(x, y) = this->bounds_checked_coordinates(x, y);
 
@@ -136,19 +143,19 @@ struct image_s
         if (xFloored >= (this->width() - 1)) xFloored = (this->width() - 2);
         if (yFloored >= (this->height() - 1)) yFloored = (this->height() - 2);
 
-        T c1[4], c2[4];
-        for (unsigned i = 0; i < 4; i++)
+        color_s<T, NumColorChannels> interpolatedPixel;
+
+        for (unsigned i = 0; i < NumColorChannels; i++)
         {
-            c1[i] = std::lerp(pixels[(xFloored       + yFloored       * this->width())][i],
-                              pixels[(xFloored       + (yFloored + 1) * this->width())][i], yBias);
-            c2[i] = std::lerp(pixels[((xFloored + 1) + yFloored       * this->width())][i],
-                              pixels[((xFloored + 1) + (yFloored + 1) * this->width())][i], yBias);
+            const T c1 = std::lerp(pixels[(xFloored       + yFloored       * this->width())][i],
+                                   pixels[(xFloored       + (yFloored + 1) * this->width())][i], yBias);
+            const T c2 = std::lerp(pixels[((xFloored + 1) + yFloored       * this->width())][i],
+                                   pixels[((xFloored + 1) + (yFloored + 1) * this->width())][i], yBias);
+
+            interpolatedPixel[i] = T(std::lerp(c1, c2, xBias));
         }
 
-        return {T(std::lerp(c1[0], c2[0], xBias)),
-                T(std::lerp(c1[1], c2[1], xBias)),
-                T(std::lerp(c1[2], c2[2], xBias)),
-                T(255)};
+        return interpolatedPixel;
     }
 
     const uint8_t* pixel_array(void) const
@@ -156,7 +163,22 @@ struct image_s
         return (uint8_t*)pixels;
     }
 
-    void fill(const color_s<T, 4> &fillColor)
+    void fill_channel(const T fillValue, const unsigned channelIdx)
+    {
+        vond_assert((channelIdx < NumColorChannels), "Overflowing the color channel.");
+
+        for (unsigned y = 0; y < this->height(); y++)
+        {
+            for (unsigned x = 0; x < this->width(); x++)
+            {
+                this->pixel_at(x, y)[channelIdx] = fillValue;
+            }
+        }
+
+        return;
+    }
+
+    void fill(const color_s<T, NumColorChannels> &fillColor)
     {
         for (unsigned y = 0; y < this->height(); y++)
         {
@@ -203,23 +225,23 @@ struct image_s
 
     // Returns a copy of this image but with its values converted into the given
     // type.
-    template <typename T2>
-    image_s<T2> as(const double scale = 1,
-                   const double low = 0,
-                   const double high = 255) const
+    template <typename T2, size_t NumColorChannels2>
+    image_s<T2, NumColorChannels2> as(const double scale = 1,
+                                      const double low = 0,
+                                      const double high = 255) const
     {
-        image_s<T2> newImage(this->width(), this->height(), this->bpp());
+        image_s<T2, NumColorChannels2> newImage(this->width(), this->height(), this->bpp());
 
         for (unsigned y = 0; y < this->height(); y++)
         {
             for (unsigned x = 0; x < this->width(); x++)
             {
-                const auto thisPixel = this->pixel_at(x, y);
+                for (unsigned i = 0; i < NumColorChannels2; i++)
+                {
+                    const double convertedValue = double(this->pixel_at(x, y)[i % NumColorChannels] * scale);
 
-                newImage.pixel_at(x, y) = {T2(std::max(low, std::min(high, double(thisPixel.r * scale)))),
-                                           T2(std::max(low, std::min(high, double(thisPixel.g * scale)))),
-                                           T2(std::max(low, std::min(high, double(thisPixel.b * scale)))),
-                                           T2(255)};
+                    newImage.pixel_at(x, y)[i] = T2(std::max(low, std::min(high, convertedValue)));
+                }
             }
         }
 
@@ -234,7 +256,7 @@ private:
     const unsigned width_;
     const unsigned height_;
     const unsigned bpp_;
-    color_s<T, 4> *const pixels;
+    color_s<T, NumColorChannels> *const pixels;
 };
 
 #endif

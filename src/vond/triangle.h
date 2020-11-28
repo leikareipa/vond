@@ -9,7 +9,7 @@ struct triangle_material_s
 {
     std::string name = "Unnamed material";
     color_s<uint8_t, 4> baseColor = {0};
-    image_s<uint8_t> *texture = nullptr;
+    image_s<uint8_t, 4> *texture = nullptr;
 };
 
 struct triangle_s

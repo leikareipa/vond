@@ -51,10 +51,10 @@ struct ray_s
     vector3_s<double> dir;
 };
 
-void kr_draw_landscape(const image_s<double> &srcHeightmap,
-                       const image_s<uint8_t> &srcTexture,
-                       image_s<uint8_t> &dstPixelmap,
-                       image_s<double> &dstDepthmap,
+void kr_draw_landscape(const image_s<double, 1> &srcHeightmap,
+                       const image_s<uint8_t, 4> &srcTexture,
+                       image_s<uint8_t, 4> &dstPixelmap,
+                       image_s<double, 1> &dstDepthmap,
                        const camera_s &camera)
 {
     vond_assert((srcHeightmap.width() == srcTexture.width()) &&
@@ -164,7 +164,7 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                             //color.b = std::min(255.0, (color.b * distanceFog));
 
                             dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
-                            dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth, depth, depth};
+                            dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth};
 
                             #ifdef REDUCED_DISTANCE_DETAIL
                                 // For reduced resolution, draw this pixel double-wide.
@@ -217,7 +217,7 @@ void kr_draw_landscape(const image_s<double> &srcHeightmap,
                     const double depth = std::numeric_limits<double>::max();
 
                     dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
-                    dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth, depth, depth};
+                    dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth};
 
                     #ifdef REDUCED_DISTANCE_DETAIL
                         // For reduced resolution, draw this pixel double-wide.

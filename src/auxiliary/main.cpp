@@ -78,18 +78,40 @@ int main(void)
         // The image buffers we'll render into. Note that the resolution determines
         // the render resolution, which is then upscaled to the resolution of the
         // window.
-        image_s<uint8_t> pixelmap(320, 200, 32);
-        image_s<double> depthmap(pixelmap.width(), pixelmap.height(), pixelmap.bpp());
+        image_s<uint8_t, 4> pixelmap(320, 200, 32);
+        image_s<double, 1> depthmap(pixelmap.width(), pixelmap.height(), pixelmap.bpp());
 
         // Load the landscape heightmap and texture map, as well as a polygon object
         // for testing.
         /// TODO: In the future, asset initialization will be handled somewhere other than here.
-        image_s<double> heightmap(QImage("terrain_heightmap.png"));
-        image_s<uint8_t> texture(QImage("terrain_texture.png"));
+        image_s<double, 1> terrainHeightmap(QImage("terrain_heightmap.png"));
+        image_s<uint8_t, 4> terrainTexture(QImage("terrain_texture.png"));
         std::vector<triangle_s> tris2 = kmesh_mesh_triangles("untitled.vmf");
 
         //heightmap.boundsCheckingMode = image_bounds_checking_mode_e::wrapped;
         //texture.boundsCheckingMode = image_bounds_checking_mode_e::wrapped;
+
+        for (triangle_s &tri: tris2)
+        {
+            for (unsigned i = 0; i < 3; i++)
+            {
+                tri.v[i].pos.x *= 0.01;
+                tri.v[i].pos.y *= 0.01;
+                tri.v[i].pos.z *= 0.01;
+            }
+        }
+
+        for (unsigned loops = 0; loops < 3; loops++)
+        {
+            for (unsigned y = 1; y < terrainHeightmap.height()-1; y++)
+            {
+                for (unsigned x = 1; x < terrainHeightmap.width()-1; x++)
+                {
+                    terrainHeightmap.pixel_at(x, y) = terrainHeightmap.interpolated_pixel_at(x + 0.5, y + 0.5);
+                    terrainTexture.pixel_at(x, y) = terrainTexture.interpolated_pixel_at(x + 0.5, y + 0.5);
+                }
+            }
+        }
 
         /// TODO: In the future, camera initialization will be handled somewhere other than here.
         camera_s camera;
@@ -121,7 +143,7 @@ int main(void)
 
                 kd_update_input(&camera);
 
-                kr_draw_landscape(heightmap, texture, pixelmap, depthmap, camera);
+                kr_draw_landscape(terrainHeightmap, terrainTexture, pixelmap, depthmap, camera);
                 kr_draw_triangles(tris2, pixelmap, depthmap, camera);
 
                 renderTime = tim.elapsed();
@@ -151,7 +173,7 @@ int main(void)
                 camera.pos.y += dir.y;
                 camera.pos.z += dir.z;
 
-                camera.pos.y = heightmap.interpolated_pixel_at(camera.pos.x, camera.pos.z)[0] / 1.0 + 0.5;
+                camera.pos.y = terrainHeightmap.interpolated_pixel_at(camera.pos.x, camera.pos.z)[0] / 1.0 + 0.5;
             }
 
             // Statistics.

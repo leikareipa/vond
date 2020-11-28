@@ -93,8 +93,8 @@ static precomputed_params_s get_precomputed_parameters(const triangle_s &tri,
 }
 
 void kr_barycentric_rasterize_triangle(const triangle_s &tri,
-                                       image_s<uint8_t> &dstPixelmap,
-                                       image_s<double> &dstDepthmap)
+                                       image_s<uint8_t, 4> &dstPixelmap,
+                                       image_s<double, 1> &dstDepthmap)
 {
     const precomputed_params_s precomputedParams = get_precomputed_parameters(tri, rect_s<int>{{0, 0}, {int(dstPixelmap.width()), int(dstPixelmap.height())}});
 
@@ -119,7 +119,7 @@ void kr_barycentric_rasterize_triangle(const triangle_s &tri,
             dstPixelmap.pixel_at(x, y) = tri.material.texture
                                          ? tri.material.texture->interpolated_pixel_at(u, v)
                                          : tri.material.baseColor;
-            dstDepthmap.pixel_at(x, y) = {depth, depth, depth};
+            dstDepthmap.pixel_at(x, y) = {depth};
         }
 
         return;
@@ -168,7 +168,7 @@ void kr_barycentric_rasterize_triangle(const triangle_s &tri,
                     const double v = (BARY_INTERPOLATE(uv[1]) * tri.material.texture->height());
 
                     dstPixelmap.pixel_at(x, y) = tri.material.texture->interpolated_pixel_at(u, v);
-                    dstDepthmap.pixel_at(x, y) = {depth, depth, depth};
+                    dstDepthmap.pixel_at(x, y) = {depth};
                 }
             }
         }

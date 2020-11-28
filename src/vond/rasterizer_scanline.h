@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 struct triangle_s;
-template <typename T> struct image_s;
+template <typename T, size_t NumColorChannels> struct image_s;
 
 // Parameters to be interpolated - during rendering - vertically along triangle
 // edges and horizontally along pixel spans.
@@ -46,7 +46,7 @@ struct interpolation_params_s
 // Rasterizes the given triangle into the given pixel map using scanline-based
 // rendering.
 void kr_scanline_rasterize_triangle(const triangle_s &tri,
-                                    image_s<uint8_t> &dstPixelmap,
-                                    image_s<double> &dstDepthmap);
+                                    image_s<uint8_t, 4> &dstPixelmap,
+                                    image_s<double, 1> &dstDepthmap);
 
 #endif

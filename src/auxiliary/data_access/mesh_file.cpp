@@ -103,7 +103,7 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                             meshFile.error_if_not(!material.texture, "Can't re-define the texture for a material.");
                             meshFile.error_if_not((line.params.size() == 1), "Expected one parameters for the material's texture filename.");
 
-                            material.texture = new image_s<uint8_t>(QImage(QString::fromStdString(line.params.at(0))));
+                            material.texture = new image_s<uint8_t, 4>(QImage(QString::fromStdString(line.params.at(0))));
 
                             break;
                         }

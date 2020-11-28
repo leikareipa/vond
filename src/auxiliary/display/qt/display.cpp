@@ -33,7 +33,7 @@ namespace app_n
     static QApplication *const APP = new QApplication(ARGC, &ARGV);
 }
 
-void kd_update_display(const image_s<uint8_t> &pixelmap)
+void kd_update_display(const image_s<uint8_t, 4> &pixelmap)
 {
     static uint32_t fpsCnt = 0;
 

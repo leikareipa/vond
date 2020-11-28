@@ -114,8 +114,8 @@ std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &trian
 }
 
 void kr_draw_triangles(const std::vector<triangle_s> &triangles,
-                       image_s<uint8_t> &dstPixelmap,
-                       image_s<double> &dstDepthmap,
+                       image_s<uint8_t, 4> &dstPixelmap,
+                       image_s<double, 1> &dstDepthmap,
                        const camera_s &camera)
 {
     const auto transformedTriangles = transform_triangles(triangles, dstPixelmap.width(), dstPixelmap.height(), camera);
