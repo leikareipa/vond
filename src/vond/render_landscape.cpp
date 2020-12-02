@@ -28,19 +28,12 @@ static enum class detail_level_e
     l100
 } DETAIL_LEVEL = detail_level_e::l50;
 
-static const double PERSPECTIVE_CORRECTION_DETAIL =
+static const double RAY_STEP_SIZE =
         (DETAIL_LEVEL == detail_level_e::l100)? 0.05
         : (DETAIL_LEVEL == detail_level_e::l75)? 0.1
         : (DETAIL_LEVEL == detail_level_e::l50)? 0.2
         : (DETAIL_LEVEL == detail_level_e::l25)? 0.3
         : 0.4;
-
-static const double RAY_SKIP_MULTIPLIER =
-        (DETAIL_LEVEL == detail_level_e::l100)? 0.0001
-        : (DETAIL_LEVEL == detail_level_e::l75)? 0.0002
-        : (DETAIL_LEVEL == detail_level_e::l50)? 0.0003
-        : (DETAIL_LEVEL == detail_level_e::l25)? 0.0004
-        : 0.0005;
 
 // Define this to have landscape in the distance rendered in less detail.
 //#define REDUCED_DISTANCE_DETAIL
@@ -78,8 +71,6 @@ void kr_draw_landscape(const image_s<double, 1> &srcHeightmap,
         unsigned rayDepth = 0;      // How many steps the ray has traced into the current horizontal slice.
 
         const double screenPlaneX = ((2.0 * ((x + 0.5) / dstPixelmap.width()) - 1.0) * tanFov * aspectRatio);
-        const double perspectiveCorrection = std::max(PERSPECTIVE_CORRECTION_DETAIL,
-                                                      acos(vector3_s<double>{screenPlaneX, 0, camera.zoom}.dot(vector3_s<double>{0, 0, camera.zoom})));
 
         // For each horizontal slice, shoot a ray toward each of the pixels in its
         // vertical column, starting from the bottom of the screen and working up.
@@ -97,7 +88,7 @@ void kr_draw_landscape(const image_s<double, 1> &srcHeightmap,
                     const vector3_s<double> view = (vector3_s<double>{screenPlaneX, screenPlaneY, camera.zoom} * viewMatrix);
 
                     ray.pos = camera.pos;
-                    ray.dir = (view.normalized() * perspectiveCorrection);
+                    ray.dir = (view.normalized() * RAY_STEP_SIZE);
                 }
 
                 // Move the ray up to where the previous ray terminated.
@@ -128,7 +119,7 @@ void kr_draw_landscape(const image_s<double, 1> &srcHeightmap,
                     // first voxel whose height is greater than the ray's height at that
                     // grid element. Once the ray intersects such a voxel, it'll be drawn
                     // to screen, and tracing for this screen slice ends.
-                    for (; rayDepth < (MAX_RAY_LENGTH / perspectiveCorrection); stepsTaken++)
+                    for (; rayDepth < (MAX_RAY_LENGTH / RAY_STEP_SIZE); stepsTaken++)
                     {
                         // Don't trace rays that are directed upward and above the maximum
                         // height of the terrain.
@@ -179,10 +170,8 @@ void kr_draw_landscape(const image_s<double, 1> &srcHeightmap,
                             break;
                         }
 
-                        // Move the ray to the next voxel.
-                        const unsigned extraSteps = (rayDepth * RAY_SKIP_MULTIPLIER);
-                        ray.pos += (ray.dir * (extraSteps + 1));
-                        rayDepth += (extraSteps + 1);
+                        ray.pos += ray.dir;
+                        rayDepth ++;
                     }
                 }
             }
