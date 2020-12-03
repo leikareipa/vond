@@ -30,6 +30,7 @@ HEADERS += \
     src/vond/assert.h \
     src/auxiliary/main.h \
     src/vond/color.h \
+    src/vond/image_mosaic.h \
     src/vond/rasterizer_barycentric.h \
     src/vond/rasterizer_scanline.h \
     src/vond/rect.h \

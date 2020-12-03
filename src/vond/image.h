@@ -16,6 +16,7 @@
 // are handled.
 enum class image_bounds_checking_mode_e
 {
+    none,
     clamped,
     wrapped,
 };
@@ -160,7 +161,7 @@ struct image_s
 
     const uint8_t* pixel_array(void) const
     {
-        return (uint8_t*)pixels;
+        return (uint8_t*)this->pixels;
     }
 
     image_s<T, NumColorChannels>& fill_channel(const unsigned channelIdx, const T fillValue)
@@ -198,6 +199,7 @@ struct image_s
     {
         switch (this->boundsCheckingMode)
         {
+            case image_bounds_checking_mode_e::none: return {x, y};
             case image_bounds_checking_mode_e::wrapped: return this->wrapped_coordinates(x, y);
             case image_bounds_checking_mode_e::clamped: return this->clamped_coordinates(x, y);
         }
