@@ -20,6 +20,7 @@
 #include "vond/assert.h"
 #include "vond/camera.h"
 #include "vond/image.h"
+#include "vond/image_mosaic.h"
 #include "auxiliary/ui.h"
 #include "auxiliary/ui/input.h"
 
@@ -88,9 +89,6 @@ int main(void)
         image_s<uint8_t, 4> terrainTexture(QImage("terrain_texture.png"));
         std::vector<triangle_s> tris2 = kmesh_mesh_triangles("untitled.vmf");
 
-        //heightmap.boundsCheckingMode = image_bounds_checking_mode_e::wrapped;
-        //texture.boundsCheckingMode = image_bounds_checking_mode_e::wrapped;
-
         for (triangle_s &tri: tris2)
         {
             for (unsigned i = 0; i < 3; i++)
@@ -113,9 +111,19 @@ int main(void)
             }
         }
 
+        const auto terrainHeightmapSampler = [&terrainHeightmap](const double x, const double y)->color_s<double, 1>
+        {
+            return terrainHeightmap.interpolated_pixel_at(x, y);
+        };
+
+        const auto terrainTextureSampler = [&terrainTexture](const double x, const double y)->color_s<uint8_t, 4>
+        {
+            return terrainTexture.interpolated_pixel_at(x, y);
+        };
+
         /// TODO: In the future, camera initialization will be handled somewhere other than here.
         camera_s camera;
-        camera.pos = {512, 160, 512};
+        camera.pos = {512, 200, 512};
         camera.orientation = {0.5, -0.3, 0};
         camera.zoom = 1;
         camera.fov = 80;
@@ -130,20 +138,20 @@ int main(void)
             QElapsedTimer tim;
             tim.start();
 
-            // Prepare for the new frame.
+            // Prepare for the next frame.
             {
                 depthmap.fill({std::numeric_limits<double>::max()});
                 pixelmap.fill({0});
                 ktext_clear_ui_text_entries();
             }
 
-            // Create the new frame.
+            // Render the next frame.
             {
                 ktext_add_ui_text(std::string("FPS: ") + std::to_string(avgFPS), {10, 20});
 
                 kd_update_input(&camera);
 
-                kr_draw_landscape(terrainHeightmap, terrainTexture, pixelmap, depthmap, camera);
+                kr_draw_landscape(terrainHeightmapSampler, terrainTextureSampler, pixelmap, depthmap, camera);
                 kr_draw_triangles(tris2, pixelmap, depthmap, camera);
 
                 renderTime = tim.elapsed();
@@ -168,12 +176,12 @@ int main(void)
                 if (kinput_is_moving_left()) dir.x = -1;
 
                 dir *= (matrix44_rotation_s(0, camera.orientation.y, 0) * matrix44_rotation_s(camera.orientation.x, 0, 0));
-                dir = dir.normalized();
+                dir = dir.normalized()*0.015;
                 camera.pos.x += dir.x;
                 camera.pos.y += dir.y;
                 camera.pos.z += dir.z;
 
-                //camera.pos.y = terrainHeightmap.interpolated_pixel_at(camera.pos.x, camera.pos.z)[0] / 1.0 + 0.5;
+                camera.pos.y = terrainHeightmapSampler(camera.pos.x, camera.pos.z)[0] / 1.0 + 0.8;
             }
 
             // Statistics.

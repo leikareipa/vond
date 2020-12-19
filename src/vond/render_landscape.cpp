@@ -42,24 +42,21 @@ static const double RAY_SKIP_MULTIPLIER =
         : (DETAIL_LEVEL == detail_level_e::l25)? 0.0008
         : 0.001;
 
-// Define this to have landscape in the distance rendered in less detail.
-//#define REDUCED_DISTANCE_DETAIL
-
 struct ray_s
 {
     vector3_s<double> pos;
     vector3_s<double> dir;
 };
 
-void kr_draw_landscape(const image_mosaic_c<double, 1> &srcHeightmap,
-                       const image_mosaic_c<uint8_t, 4> &srcTexture,
+void kr_draw_landscape(std::function<color_s<double, 1>(const double x, const double y)> terrainHeightmapSampler,
+                       std::function<color_s<uint8_t, 4>(const double x, const double y)> terrainTextureSampler,
                        image_s<uint8_t, 4> &dstPixelmap,
                        image_s<double, 1> &dstDepthmap,
                        const camera_s &camera)
 {
     vond_assert((dstPixelmap.width() == dstDepthmap.width()) &&
-             (dstPixelmap.height() == dstDepthmap.height()),
-             "The pixel map must have the same resolution as the depth map.");
+                (dstPixelmap.height() == dstDepthmap.height()),
+                "The pixel map must have the same resolution as the depth map.");
 
     const double aspectRatio = (dstPixelmap.width() / double(dstPixelmap.height()));
     const double tanFov = tan((camera.fov / 2.0) * (M_PI / 180.0));
@@ -131,56 +128,22 @@ void kr_draw_landscape(const image_mosaic_c<double, 1> &srcHeightmap,
                             goto draw_sky;
                         }
 
-                        if (srcHeightmap.coordinates_out_of_range(ray.pos.x, ray.pos.z))
+                        // Get the height of the voxel that's directly below this ray.
+                        double voxelHeight = terrainHeightmapSampler(ray.pos.x, ray.pos.z)[0];
+
+                        // Draw the voxel if the ray intersects it (i.e. if the voxel
+                        // is taller than the ray's current height).
+                        if (voxelHeight >= ray.pos.y)
                         {
-                            goto draw_sky;
+                            const double depth = ray.pos.distance_to(camera.pos);
+                            const color_s<uint8_t, 4> color = terrainTextureSampler(ray.pos.x, ray.pos.z);
+
+                            dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
+                            dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth};
+
+                            break;
                         }
-
-                        if (srcHeightmap.coordinates_have_data(ray.pos.x, ray.pos.z))
-                        {
-                            #ifdef REDUCED_DISTANCE_DETAIL
-                                // Make the distance more pixelated.
-                                if (rayDepth > 2000 && (x % 2) == 0)
-                                {
-                                    break;
-                                }
-                            #endif
-
-                            // Get the height of the voxel that's directly below this ray.
-                            double voxelHeight = (rayDepth < 500)
-                                               ? srcHeightmap.interpolated_pixel_at(ray.pos.x, ray.pos.z)[0]
-                                               : srcHeightmap.pixel_at(ray.pos.x, ray.pos.z)[0];
-
-                            // Draw the voxel if the ray intersects it (i.e. if the voxel
-                            // is taller than the ray's current height).
-                            if (voxelHeight >= ray.pos.y)
-                            {
-                                const double depth = ray.pos.distance_to(camera.pos);
-                                const double distanceFog = std::max(1.0, std::min(2.0, (depth / 2200.0)));
-
-                                color_s<uint8_t, 4> color = (rayDepth < 3000)
-                                                            ? srcTexture.interpolated_pixel_at(ray.pos.x, ray.pos.z)
-                                                            : srcTexture.pixel_at(ray.pos.x, ray.pos.z);
-
-                                //color.b = std::min(255.0, (color.b * distanceFog));
-
-                                dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
-                                dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth};
-
-                                #ifdef REDUCED_DISTANCE_DETAIL
-                                    // For reduced resolution, draw this pixel double-wide.
-                                    if ((rayDepth > 2000) && (x % 2 != 0) && (x < (dstPixelmap.width() - 1)))
-
-                                    {
-                                        dstPixelmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = color;
-                                        dstDepthmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = {depth};
-                                    }
-                                #endif
-
-                                break;
-                            }
-                        }
-
+                        
                         const unsigned extraSteps = (rayDepth * RAY_SKIP_MULTIPLIER);
                         ray.pos += (ray.dir * (extraSteps + 1));
                         rayDepth += (extraSteps + 1);
@@ -215,19 +178,8 @@ void kr_draw_landscape(const image_mosaic_c<double, 1> &srcHeightmap,
                                                        uint8_t(horizonColor[2] - colorAttenuation),
                                                        255};
 
-                    const double depth = std::numeric_limits<double>::max();
-
                     dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
-                    dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth};
-
-                    #ifdef REDUCED_DISTANCE_DETAIL
-                        // For reduced resolution, draw this pixel double-wide.
-                        if ((rayDepth > 0) && (x % 2 != 0) && (x < (dstPixelmap.width() - 1)))
-                        {
-                            dstPixelmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = color;
-                            dstDepthmap.pixel_at((x + 1), (dstPixelmap.height() - y - 1)) = {depth};
-                        }
-                    #endif
+                    dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {std::numeric_limits<double>::max()};
                 }
             }
         }

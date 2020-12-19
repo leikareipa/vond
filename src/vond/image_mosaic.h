@@ -54,17 +54,26 @@ public:
 
     color_s<T, NumImageColorChannels>& pixel_at(int x, int y) const
     {
-        const int tileX = (x / this->tileWidth);
-        const int tileY = (y / this->tileHeight);
+        const unsigned tileX = (x / this->tileWidth);
+        const unsigned tileY = (y / this->tileHeight);
 
-        return this->tiles[tileX + tileY * numTilesX]->pixel_at((x - (tileX * this->tileWidth)), (y - (tileY * this->tileHeight)));
+        vond_optional_assert((tileX < this->numTilesX) &
+                             (tileY < this->numTilesY),
+                             "Mosaic overflowing on pixel query.");
+
+        return this->tiles[tileX + tileY * this->numTilesX]->pixel_at((x - (tileX * this->tileWidth)), (y - (tileY * this->tileHeight)));
     }
 
     color_s<T, NumImageColorChannels> interpolated_pixel_at(double x, double y) const
     {
-        const int tileX = (x / this->tileWidth);
-        const int tileY = (y / this->tileHeight);
-        const image_s<T, NumImageColorChannels> &image = *this->tiles[tileX + tileY * numTilesX];
+        const unsigned tileX = (x / this->tileWidth);
+        const unsigned tileY = (y / this->tileHeight);
+
+        vond_optional_assert((tileX < this->numTilesX) &
+                             (tileY < this->numTilesY),
+                             "Mosaic overflowing on pixel query.");
+
+        const image_s<T, NumImageColorChannels> &image = *this->tiles[tileX + tileY * this->numTilesX];
 
         // FIXME: Only sampling one image will produce edge artefacts.
         return image.interpolated_pixel_at((x - (tileX * this->tileWidth)), (y - (tileY * this->tileHeight)));
@@ -76,7 +85,7 @@ public:
     {
         const unsigned tileX = (x / this->tileWidth);
         const unsigned tileY = (y / this->tileHeight);
-        const unsigned idx = (tileX + tileY * numTilesX);
+        const unsigned idx = (tileX + tileY * this->numTilesX);
 
         if ((tileX > this->numTilesX) ||
             (tileY > this->numTilesY) ||
