@@ -118,7 +118,7 @@ void vond::rasterize_triangle::barycentric(const vond::triangle &tri,
             const double v = (((tri.v[0].uv[1] + tri.v[1].uv[1] + tri.v[2].uv[1]) / 3.0) * tri.material.texture->height());
 
             dstPixelmap.pixel_at(x, y) = tri.material.texture
-                                         ? tri.material.texture->interpolated_pixel_at(u, v)
+                                         ? tri.material.texture->bilinear_sample(u, v)
                                          : tri.material.baseColor;
             dstDepthmap.pixel_at(x, y) = {depth};
         }
@@ -168,7 +168,7 @@ void vond::rasterize_triangle::barycentric(const vond::triangle &tri,
                     const double u = (BARY_INTERPOLATE(uv[0]) * tri.material.texture->width());
                     const double v = (BARY_INTERPOLATE(uv[1]) * tri.material.texture->height());
 
-                    dstPixelmap.pixel_at(x, y) = tri.material.texture->interpolated_pixel_at(u, v);
+                    dstPixelmap.pixel_at(x, y) = tri.material.texture->bilinear_sample(u, v);
                     dstDepthmap.pixel_at(x, y) = {depth};
                 }
             }

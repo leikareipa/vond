@@ -85,41 +85,35 @@ int main(void)
         // Load the landscape heightmap and texture map, as well as a polygon object
         // for testing.
         /// TODO: In the future, asset initialization will be handled somewhere other than here.
-        vond::image<double, 1> terrainHeightmap(QImage("height.png"));
-        vond::image<uint8_t, 4> terrainTexture(QImage("ground.png"));
+        vond::image<double, 1> groundHeightmap(QImage("height.png"));
+        vond::image<uint8_t, 4> groundTexture(QImage("ground.png"));
 
         for (unsigned loops = 0; loops < 2; loops++)
         {
-            for (unsigned y = 1; y < terrainHeightmap.height()-1; y++)
+            for (unsigned y = 1; y < groundHeightmap.height()-1; y++)
             {
-                for (unsigned x = 1; x < terrainHeightmap.width()-1; x++)
+                for (unsigned x = 1; x < groundHeightmap.width()-1; x++)
                 {
-                    terrainHeightmap.pixel_at(x, y) = terrainHeightmap.interpolated_pixel_at(x + 0.5, y + 0.5);
-                    terrainTexture.pixel_at(x, y) = terrainTexture.interpolated_pixel_at(x + 0.5, y + 0.5);
+                    groundHeightmap.pixel_at(x, y) = groundHeightmap.bilinear_sample(x + 0.5, y + 0.5);
+                    groundTexture.pixel_at(x, y) = groundTexture.bilinear_sample(x + 0.5, y + 0.5);
                 }
             }
         }
 
-        const auto terrainHeightmapSampler = [&terrainHeightmap](const double x, const double y)->vond::color<double, 1>
+        const auto groundHeightmapSampler = [&groundHeightmap](const double x, const double y)->vond::color<double, 1>
         {
-            if (x < 0 || x > terrainHeightmap.width() ||
-                y < 0 || y > terrainHeightmap.height())
-            {
-                return {-100};
-            }
-
-            return terrainHeightmap.interpolated_pixel_at(x, y);
+            return groundHeightmap.bilinear_sample(x, y);
         };
 
-        const auto terrainTextureSampler = [&terrainTexture](const double x, const double y)->vond::color<uint8_t, 4>
+        const auto groundTextureSampler = [&groundTexture](const double x, const double y)->vond::color<uint8_t, 4>
         {
-            if (x < 0 || x > terrainTexture.width() ||
-                y < 0 || y > terrainTexture.height())
+            if ((x < 0) || (x > groundTexture.width()) ||
+                (y < 0) || (y > groundTexture.height()))
             {
-                return {0, 0, 0, 255};
+                return {0, 0, 0, 0};
             }
 
-            return terrainTexture.interpolated_pixel_at(x, y);
+            return groundTexture.bilinear_sample(x, y);
         };
 
         /// TODO: In the future, camera initialization will be handled somewhere other than here.
@@ -141,8 +135,8 @@ int main(void)
 
             // Prepare for the next frame.
             {
+                renderBuffer.fill({0, 0, 0, 255});
                 depthMap.fill({std::numeric_limits<double>::max()});
-                renderBuffer.fill({0});
                 ktext_clear_ui_text_entries();
             }
 
@@ -150,7 +144,7 @@ int main(void)
             {
                 ktext_add_ui_text(std::string("FPS: ") + std::to_string(avgFPS), {10, 20});
                 kd_update_input(&camera);
-                vond::render_landscape(terrainHeightmapSampler, terrainTextureSampler, renderBuffer, depthMap, camera);
+                vond::render_landscape(groundHeightmapSampler, groundTextureSampler, renderBuffer, depthMap, camera);
 
                 renderTime = tim.elapsed();
             }

@@ -78,7 +78,7 @@ namespace vond
             const vond::image<T, NumImageColorChannels> &image = *this->tiles[tileX + tileY * this->numTilesX];
 
             // FIXME: Only sampling one image will produce edge artefacts.
-            return image.interpolated_pixel_at((x - (tileX * this->tileWidth)), (y - (tileY * this->tileHeight)));
+            return image.bilinear_sample((x - (tileX * this->tileWidth)), (y - (tileY * this->tileHeight)));
         }
 
         // Returns true if the mosaic contains pixel data at the given XY coordinates;

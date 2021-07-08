@@ -23,7 +23,7 @@ namespace vond
         wrapped,
     };
 
-    template <typename T, size_t NumColorChannels>
+    template <typename T, std::size_t NumColorChannels>
     struct image
     {
         image(const unsigned width, const unsigned height, const unsigned bpp) :
@@ -131,7 +131,7 @@ namespace vond
             return pixels[(x + y * this->width())];
         }
 
-        vond::color<T, NumColorChannels> interpolated_pixel_at(double x, double y) const
+        vond::color<T, NumColorChannels> bilinear_sample(double x, double y) const
         {
             std::tie(x, y) = this->bounds_checked_coordinates(x, y);
 
@@ -229,7 +229,7 @@ namespace vond
 
         // Returns a copy of this image but with its values converted into the given
         // type.
-        template <typename T2, size_t NumColorChannels2>
+        template <typename T2, std::size_t NumColorChannels2>
         vond::image<T2, NumColorChannels2> as(const double scale = 1,
                                               const double low = 0,
                                               const double high = 255) const

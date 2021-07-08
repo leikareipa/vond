@@ -47,8 +47,8 @@ struct ray_s
     vond::vector3<double> dir;
 };
 
-void vond::render_landscape(std::function<vond::color<double, 1>(const double x, const double y)> terrainHeightmapSampler,
-                            std::function<vond::color<uint8_t, 4>(const double x, const double y)> terrainTextureSampler,
+void vond::render_landscape(std::function<vond::color<double, 1>(const double x, const double y)> groundHeightmapSampler,
+                            std::function<vond::color<uint8_t, 4>(const double x, const double y)> groundTextureSampler,
                             vond::image<uint8_t, 4> &dstPixelmap,
                             vond::image<double, 1> &dstDepthmap,
                             const vond::camera &camera)
@@ -128,14 +128,21 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
                         }
 
                         // Get the height of the voxel that's directly below this ray.
-                        double voxelHeight = terrainHeightmapSampler(ray.pos.x, ray.pos.z)[0];
+                        double voxelHeight = groundHeightmapSampler(ray.pos.x, ray.pos.z)[0];
 
                         // Draw the voxel if the ray intersects it (i.e. if the voxel
                         // is taller than the ray's current height).
                         if (voxelHeight >= ray.pos.y)
                         {
+                            const vond::color<uint8_t, 4> color = groundTextureSampler(ray.pos.x, ray.pos.z);
+
+                            // If this pixel in the ground texture is fully transparent.
+                            if (!color[3])
+                            {
+                                goto draw_sky;
+                            }
+
                             const double depth = ray.pos.distance_to(camera.pos);
-                            const vond::color<uint8_t, 4> color = terrainTextureSampler(ray.pos.x, ray.pos.z);
 
                             dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
                             dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth};

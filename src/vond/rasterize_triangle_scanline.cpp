@@ -97,7 +97,7 @@ static void fill_triangle_row(const unsigned row,
             const double u = ((currentParams.u / currentParams.invW) * triangleMaterial.texture->width());
             const double v = ((currentParams.v / currentParams.invW) * triangleMaterial.texture->height());
             const vond::color<uint8_t, 4> color = triangleMaterial.texture
-                                          ? triangleMaterial.texture->interpolated_pixel_at(u, v)
+                                          ? triangleMaterial.texture->bilinear_sample(u, v)
                                           : triangleMaterial.baseColor;
 
             dstPixelmap.pixel_at(x, row) = color;
