@@ -4,17 +4,20 @@
  *
  */
 
-#ifndef CAMERA_H
-#define CAMERA_H
+#ifndef VOND_CAMERA_H
+#define VOND_CAMERA_H
 
 #include "vond/vector.h"
 
-struct camera_s
+namespace vond
 {
-    vector3_s<double> pos;
-    vector3_s<double> orientation;
-    double zoom;
-    double fov;
-};
+    struct camera
+    {
+        vond::vector3<double> pos;
+        vond::vector3<double> orientation;
+        double zoom;
+        double fov;
+    };
+}
 
 #endif

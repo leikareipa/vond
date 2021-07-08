@@ -11,8 +11,8 @@
 #include "vond/camera.h"
 #include "vond/render.h"
 #include "vond/image.h"
-#include "vond/rasterizer_barycentric.h"
-#include "vond/rasterizer_scanline.h".h"
+#include "vond/rasterize_triangle_barycentric.h"
+#include "vond/rasterize_triangle_scanline.h"
 
 #define DEG_TO_RAD(deg) ((deg) * (M_PI / 180.0))
 
@@ -20,38 +20,37 @@
 static const double Z_NEAR = 0.1;
 static const double Z_FAR = 1000;
 
-std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &triangles,
-                                            const unsigned screenWidth,
-                                            const unsigned screenHeight,
-                                            const camera_s &camera)
+static std::vector<vond::triangle> transform_triangles(const std::vector<vond::triangle> &triangles,
+                                                       const unsigned screenWidth,
+                                                       const unsigned screenHeight,
+                                                       const vond::camera &camera)
 {
     // Create a matrix by which we can transform the triangles into screen-space.
-    matrix44_s toWorldSpace;
+    vond::matrix44 toWorldSpace;
     {
-        const vector3_s<double> objectPos = {512, 110, 512};
-        toWorldSpace = matrix44_translation_s(objectPos.x, objectPos.y, objectPos.z);
+        const vond::vector3<double> objectPos = {512, 110, 512};
+        toWorldSpace = vond::translation_matrix(objectPos.x, objectPos.y, objectPos.z);
     }
 
-    matrix44_s toClipSpace;
+    vond::matrix44 toClipSpace;
     {
-        const matrix44_s cameraMatrix = matrix44_rotation_s(-camera.orientation.x, -camera.orientation.y, camera.orientation.z) *
-                                        matrix44_translation_s(-camera.pos.x, -camera.pos.y, -camera.pos.z);
+        const vond::matrix44 cameraMatrix = vond::rotation_matrix(-camera.orientation.x, -camera.orientation.y, camera.orientation.z) *
+                                            vond::translation_matrix(-camera.pos.x, -camera.pos.y, -camera.pos.z);
 
-        const matrix44_s perspectiveMatrix = matrix44_perspective_s(DEG_TO_RAD(camera.fov),
-                                                                    (double(screenWidth) / screenHeight),
-                                                                    Z_NEAR, Z_FAR);
+        const vond::matrix44 perspectiveMatrix = vond::perspective_matrix(DEG_TO_RAD(camera.fov),
+                                                                          (double(screenWidth) / screenHeight),
+                                                                          Z_NEAR, Z_FAR);
 
         toClipSpace = (perspectiveMatrix * cameraMatrix);
     }
 
-    const matrix44_s toScreenSpace = matrix44_screen_space_s((screenWidth / 2.0),
-                                                             (screenHeight / 2.0));
+    const vond::matrix44 toScreenSpace = vond::screen_space_matrix((screenWidth / 2.0),
+                                                                   (screenHeight / 2.0));
 
 
     // Transform the triangles.
-    std::vector<triangle_s> transformedTris;
+    std::vector<vond::triangle> transformedTris;
     {
-        unsigned idx = 0;
         double vertDepths[3];
 
         for (auto tri: triangles)
@@ -113,17 +112,17 @@ std::vector<triangle_s> transform_triangles(const std::vector<triangle_s> &trian
     return transformedTris;
 }
 
-void kr_draw_triangles(const std::vector<triangle_s> &triangles,
-                       image_s<uint8_t, 4> &dstPixelmap,
-                       image_s<double, 1> &dstDepthmap,
-                       const camera_s &camera)
+void vond::render_triangles(const std::vector<vond::triangle> &triangles,
+                            vond::image<uint8_t, 4> &dstPixelmap,
+                            vond::image<double, 1> &dstDepthmap,
+                            const vond::camera &camera)
 {
     const auto transformedTriangles = transform_triangles(triangles, dstPixelmap.width(), dstPixelmap.height(), camera);
 
     for (const auto &tri: transformedTriangles)
     {
-        kr_barycentric_rasterize_triangle(tri, dstPixelmap, dstDepthmap);
-       // kr_scanline_rasterize_triangle(tri, dstPixelmap, dstDepthmap);
+        vond::rasterize_triangle::barycentric(tri, dstPixelmap, dstDepthmap);
+        //vond::rasterize_triangle::scanline(tri, dstPixelmap, dstDepthmap);
     }
 
     return;

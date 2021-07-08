@@ -6,16 +6,46 @@
  */
 
 #include <cstdlib>
-#include "vond/rasterizer_scanline.h"
+#include "vond/rasterize_triangle_scanline.h"
 #include "vond/triangle.h"
 #include "vond/image.h"
+
+// Parameters to be interpolated - during rendering - vertically along triangle
+// edges and horizontally along pixel spans.
+struct interpolation_params_s
+{
+    double startX;
+    double u;
+    double v;
+    double invW;
+    double depth;
+
+    // Increments all parameters by the given deltas.
+    // Note: Assumes that all params are of type double, and that there are as
+    // many left-side params/deltas as right-side params/deltas.
+    void increment(const interpolation_params_s &deltas, const unsigned times = 1)
+    {
+        const unsigned numParams = (sizeof(interpolation_params_s) / sizeof(double));
+
+        double *val = (double*)this;
+        double *delta = (double*)&deltas;
+
+        for (unsigned i = 0; i < numParams; i++)
+        {
+            *val += (*delta * times);
+
+            val++;
+            delta++;
+        }
+    }
+};
 
 static void fill_triangle_row(const unsigned row,
                               const interpolation_params_s &rowLeftParams,
                               const interpolation_params_s &rowRightParams,
-                              const triangle_material_s &triangleMaterial,
-                              image_s<uint8_t, 4> &dstPixelmap,
-                              image_s<double, 1> &dstDepthmap)
+                              const vond::triangle_material &triangleMaterial,
+                              vond::image<uint8_t, 4> &dstPixelmap,
+                              vond::image<double, 1> &dstDepthmap)
 {
     if (rowRightParams.startX < rowLeftParams.startX)
     {
@@ -66,9 +96,9 @@ static void fill_triangle_row(const unsigned row,
         {
             const double u = ((currentParams.u / currentParams.invW) * triangleMaterial.texture->width());
             const double v = ((currentParams.v / currentParams.invW) * triangleMaterial.texture->height());
-            const color_s<uint8_t, 4> color = triangleMaterial.texture
-                                              ? triangleMaterial.texture->interpolated_pixel_at(u, v)
-                                              : triangleMaterial.baseColor;
+            const vond::color<uint8_t, 4> color = triangleMaterial.texture
+                                          ? triangleMaterial.texture->interpolated_pixel_at(u, v)
+                                          : triangleMaterial.baseColor;
 
             dstPixelmap.pixel_at(x, row) = color;
             dstDepthmap.pixel_at(x, row) = {depth};
@@ -85,12 +115,12 @@ static void fill_triangle_row(const unsigned row,
 // the y axis (you'd first split your triangle along y, then submit the two pieces to
 // this function individually).
 //
-static void fill_split_triangle(const vertex_s *peak,
-                                const vertex_s *base1,
-                                const vertex_s *base2,
-                                const triangle_material_s &triangleMaterial,
-                                image_s<uint8_t, 4> &dstPixelmap,
-                                image_s<double, 1> &dstDepthmap)
+static void fill_split_triangle(const vond::vertex *peak,
+                                const vond::vertex *base1,
+                                const vond::vertex *base2,
+                                const vond::triangle_material &triangleMaterial,
+                                vond::image<uint8_t, 4> &dstPixelmap,
+                                vond::image<double, 1> &dstDepthmap)
 {
     vond_assert((base1->pos.y == base2->pos.y),
              "The software triangle filler was given a malformed triangle. Expected a flat base.");
@@ -102,8 +132,8 @@ static void fill_split_triangle(const vertex_s *peak,
     bool isDownTri = false;
 
     // Figure out which corner of the base is on the left/right in screen space.
-    const vertex_s *leftVert = base2;
-    const vertex_s *rightVert = base1;
+    const vond::vertex *leftVert = base2;
+    const vond::vertex *rightVert = base1;
     if (base1->pos.x < base2->pos.x)
     {
         leftVert = base1;
@@ -175,25 +205,25 @@ static void fill_split_triangle(const vertex_s *peak,
         paramsRight.increment(deltasRight);
 
         fill_triangle_row(row,
-                        paramsLeft,
-                        paramsRight,
-                        triangleMaterial,
-                        dstPixelmap,
-                        dstDepthmap);
+                          paramsLeft,
+                          paramsRight,
+                          triangleMaterial,
+                          dstPixelmap,
+                          dstDepthmap);
     }
 
     return;
 }
 
-void kr_scanline_rasterize_triangle(const triangle_s &tri,
-                                    image_s<uint8_t, 4> &dstPixelmap,
-                                    image_s<double, 1> &dstDepthmap)
+void vond::rasterize_triangle::scanline(const vond::triangle &tri,
+                                        vond::image<uint8_t, 4> &dstPixelmap,
+                                        vond::image<double, 1> &dstDepthmap)
 {
     // Sort the triangle's vertices by height. ('High' here means low y, such that
     // y = 0 is the top of the screen.)
-    const vertex_s *high = &tri.v[0];
-    const vertex_s *mid = &tri.v[1];
-    const vertex_s *low = &tri.v[2];
+    const vond::vertex *high = &tri.v[0];
+    const vond::vertex *mid = &tri.v[1];
+    const vond::vertex *low = &tri.v[2];
     if (low->pos.y < mid->pos.y)
     {
         std::swap(low, mid);
@@ -209,7 +239,7 @@ void kr_scanline_rasterize_triangle(const triangle_s &tri,
 
     // Split the triangle into two parts, one pointing up and the other down.
     // (Split algo from Bastian Molkenthin's www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html.)
-    vertex_s splitBase;
+    vond::vertex splitBase;
     const double splitRatio = ((mid->pos.y - high->pos.y) / (double)(low->pos.y - high->pos.y));
     splitBase.pos.x = (high->pos.x + ((low->pos.x - high->pos.x) * splitRatio));
     splitBase.pos.y = mid->pos.y;

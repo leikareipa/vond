@@ -4,21 +4,36 @@
  *
  */
 
-#ifndef COLOR_H
-#define COLOR_H
+#ifndef VOND_COLOR_H
+#define VOND_COLOR_H
 
 #include "vond/assert.h"
 
-template <typename T, size_t N>
-struct color_s
+namespace vond
 {
-    T channel[N] = {0};
-
-    T& operator[](const size_t idx)
+    template <typename T, size_t N>
+    struct color
     {
-        vond_optional_assert((idx < N), "Overflowing color channels.");
-        return this->channel[idx];
-    }
-};
+        T channel[N] = {0};
+
+        T& operator[](const size_t idx)
+        {
+            vond_optional_assert((idx < N), "Overflowing color channels.");
+            return this->channel[idx];
+        }
+
+        vond::color<T,N> operator*(const double scaler)
+        {
+            vond::color<T,N> newColor;
+
+            for (unsigned i = 0; i < N; i++)
+            {
+                newColor.channel[i] = (this->channel[i] * scaler);
+            }
+
+            return newColor;
+        }
+    };
+}
 
 #endif

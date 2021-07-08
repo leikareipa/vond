@@ -11,7 +11,6 @@
 #include "vond/matrix.h"
 #include "vond/vector.h"
 #include "vond/assert.h"
-#include "vond/camera.h"
 #include "vond/render.h"
 #include "vond/image.h"
 
@@ -44,15 +43,15 @@ static const double RAY_SKIP_MULTIPLIER =
 
 struct ray_s
 {
-    vector3_s<double> pos;
-    vector3_s<double> dir;
+    vond::vector3<double> pos;
+    vond::vector3<double> dir;
 };
 
-void kr_draw_landscape(std::function<color_s<double, 1>(const double x, const double y)> terrainHeightmapSampler,
-                       std::function<color_s<uint8_t, 4>(const double x, const double y)> terrainTextureSampler,
-                       image_s<uint8_t, 4> &dstPixelmap,
-                       image_s<double, 1> &dstDepthmap,
-                       const camera_s &camera)
+void vond::render_landscape(std::function<vond::color<double, 1>(const double x, const double y)> terrainHeightmapSampler,
+                            std::function<vond::color<uint8_t, 4>(const double x, const double y)> terrainTextureSampler,
+                            vond::image<uint8_t, 4> &dstPixelmap,
+                            vond::image<double, 1> &dstDepthmap,
+                            const vond::camera &camera)
 {
     vond_assert((dstPixelmap.width() == dstDepthmap.width()) &&
                 (dstPixelmap.height() == dstDepthmap.height()),
@@ -60,8 +59,8 @@ void kr_draw_landscape(std::function<color_s<double, 1>(const double x, const do
 
     const double aspectRatio = (dstPixelmap.width() / double(dstPixelmap.height()));
     const double tanFov = tan((camera.fov / 2.0) * (M_PI / 180.0));
-    const matrix44_s viewMatrix = (matrix44_rotation_s(0, camera.orientation.y, 0) *
-                                   matrix44_rotation_s(camera.orientation.x, 0, 0));
+    const vond::matrix44 viewMatrix = (vond::rotation_matrix(0, camera.orientation.y, 0) *
+                                     vond::rotation_matrix(camera.orientation.x, 0, 0));
 
     // Loop through each horizontal slice on the screen.
     #pragma omp parallel for
@@ -85,7 +84,7 @@ void kr_draw_landscape(std::function<color_s<double, 1>(const double x, const do
                 // Direct the ray toward the current screen pixel, taking into
                 // consideration the orientation of the camera.
                 {
-                    const vector3_s<double> view = (vector3_s<double>{screenPlaneX, screenPlaneY, camera.zoom} * viewMatrix);
+                    const vond::vector3<double> view = (vond::vector3<double>{screenPlaneX, screenPlaneY, camera.zoom} * viewMatrix);
 
                     ray.pos = camera.pos;
                     ray.dir = (view.normalized() * RAY_STEP_SIZE);
@@ -136,7 +135,7 @@ void kr_draw_landscape(std::function<color_s<double, 1>(const double x, const do
                         if (voxelHeight >= ray.pos.y)
                         {
                             const double depth = ray.pos.distance_to(camera.pos);
-                            const color_s<uint8_t, 4> color = terrainTextureSampler(ray.pos.x, ray.pos.z);
+                            const vond::color<uint8_t, 4> color = terrainTextureSampler(ray.pos.x, ray.pos.z);
 
                             dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
                             dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth};
@@ -160,23 +159,23 @@ void kr_draw_landscape(std::function<color_s<double, 1>(const double x, const do
 
                     const double screenPlaneY = (2.0 * ((y + 0.5) / dstPixelmap.height()) - 1.0) * tanFov;
 
-                    vector3_s<double> v = vector3_s<double>{screenPlaneX, screenPlaneY, camera.zoom};
+                    vond::vector3<double> v = vond::vector3<double>{screenPlaneX, screenPlaneY, camera.zoom};
                     v *= viewMatrix;
 
                     // Aim the ray at this pixel.
                     ray.dir = v.normalized();
 
-                    double rayHeight = abs(ray.dir.dot(vector3_s<double>{0, 1, 0}));
+                    double rayHeight = abs(ray.dir.dot(vond::vector3<double>{0, 1, 0}));
 
                     // The base horizon color when looking directly into the horizon.
-                    color_s<uint8_t, 4> horizonColor = {125, 145, 175, 255};
+                    vond::color<uint8_t, 4> horizonColor = {125, 145, 175, 255};
 
                     int colorAttenuation = std::min(115, (int)floor(190 * rayHeight * 1.1));
 
-                    const color_s<uint8_t, 4> color = {uint8_t(horizonColor[0] - colorAttenuation),
-                                                       uint8_t(horizonColor[1] - colorAttenuation),
-                                                       uint8_t(horizonColor[2] - colorAttenuation),
-                                                       255};
+                    const vond::color<uint8_t, 4> color = {uint8_t(horizonColor[0] - colorAttenuation),
+                                                           uint8_t(horizonColor[1] - colorAttenuation),
+                                                           uint8_t(horizonColor[2] - colorAttenuation),
+                                                           255};
 
                     dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
                     dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {std::numeric_limits<double>::max()};

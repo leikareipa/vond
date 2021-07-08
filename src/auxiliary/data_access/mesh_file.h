@@ -9,6 +9,6 @@
 
 #include "vond/render.h"
 
-std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename);
+std::vector<vond::triangle> kmesh_mesh_triangles(const char *const meshFilename);
 
 #endif

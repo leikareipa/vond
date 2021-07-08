@@ -13,53 +13,56 @@
 #include "vond/triangle.h"
 #include "vond/image.h"
 
-template <typename T>
-struct rect_s
+namespace vond
 {
-    vector2_s<T> topLeft = {};
-    vector2_s<T> bottomRight = {};
-
-    static rect_s<T> from_triangle(const triangle_s &tri)
+    template <typename T>
+    struct rect
     {
-        rect_s<T> triRect;
+        vond::vector2<T> topLeft = {};
+        vond::vector2<T> bottomRight = {};
 
-        double minX = std::numeric_limits<double>::max();
-        double maxX = std::numeric_limits<double>::lowest();
-        double minY = minX;
-        double maxY = maxX;
-
-        for (unsigned i = 0; i < 3; i++)
+        static rect<T> from_triangle(const vond::triangle &tri)
         {
-            minX = std::min(minX, tri.v[i].pos.x);
-            maxX = std::max(maxX, tri.v[i].pos.x);
-            minY = std::min(minY, tri.v[i].pos.y);
-            maxY = std::max(maxY, tri.v[i].pos.y);
+            rect<T> triRect;
+
+            double minX = std::numeric_limits<double>::max();
+            double maxX = std::numeric_limits<double>::lowest();
+            double minY = minX;
+            double maxY = maxX;
+
+            for (unsigned i = 0; i < 3; i++)
+            {
+                minX = std::min(minX, tri.v[i].pos.x);
+                maxX = std::max(maxX, tri.v[i].pos.x);
+                minY = std::min(minY, tri.v[i].pos.y);
+                maxY = std::max(maxY, tri.v[i].pos.y);
+            }
+
+            triRect.topLeft = {T(minX), T(minY)};
+            triRect.bottomRight = {T(maxX), T(maxY)};
+
+            return triRect;
         }
 
-        triRect.topLeft = {T(minX), T(minY)};
-        triRect.bottomRight = {T(maxX), T(maxY)};
+        rect<T> clipped_against(const rect<T> &other)
+        {
+            rect<T> newRect;
 
-        return triRect;
-    }
+            newRect.topLeft.x = std::max(this->left(), other.left());
+            newRect.topLeft.y = std::max(this->top(), other.top());
+            newRect.bottomRight.x = std::min(this->right(), other.right());
+            newRect.bottomRight.y = std::min(this->bottom(), other.bottom());
 
-    rect_s<T> clipped_against(const rect_s<T> &other)
-    {
-        rect_s<T> newRect;
+            return newRect;
+        }
 
-        newRect.topLeft.x = std::max(this->left(), other.left());
-        newRect.topLeft.y = std::max(this->top(), other.top());
-        newRect.bottomRight.x = std::min(this->right(), other.right());
-        newRect.bottomRight.y = std::min(this->bottom(), other.bottom());
-
-        return newRect;
-    }
-
-    T width() const { return (bottomRight.x - topLeft.x); }
-    T height() const { return (bottomRight.y - topLeft.y); }
-    T left() const { return topLeft.x; }
-    T right() const { return bottomRight.x; }
-    T top() const { return topLeft.y; }
-    T bottom() const { return bottomRight.y; }
-};
+        T width() const { return (bottomRight.x - topLeft.x); }
+        T height() const { return (bottomRight.y - topLeft.y); }
+        T left() const { return topLeft.x; }
+        T right() const { return bottomRight.x; }
+        T top() const { return topLeft.y; }
+        T bottom() const { return bottomRight.y; }
+    };
+}
 
 #endif

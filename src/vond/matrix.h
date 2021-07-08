@@ -33,152 +33,155 @@
  *
  */
 
-#ifndef MATRIX44_H
-#define MATRIX44_H
+#ifndef VOND_MATRIX44_H
+#define VOND_MATRIX44_H
 
 #include <cmath>
 #include "vond/assert.h"
 
-struct matrix44_s
+namespace vond
 {
-    static const unsigned sideLen = 4;
-    double elements[sideLen * sideLen];
-
-    void operator*=(const matrix44_s &other)
+    struct matrix44
     {
-        for(unsigned i = 0; i < sideLen; i++)
+        static const unsigned sideLen = 4;
+        double elements[sideLen * sideLen];
+
+        void operator*=(const matrix44 &other)
         {
-            for(unsigned j = 0; j < sideLen; j++)
+            for(unsigned i = 0; i < sideLen; i++)
             {
-                this->operator()(i,j) = ((this->operator()(i,0) * other(0,j)) +
-                                         (this->operator()(i,1) * other(1,j)) +
-                                         (this->operator()(i,2) * other(2,j)) +
-                                         (this->operator()(i,3) * other(3,j)));
+                for(unsigned j = 0; j < sideLen; j++)
+                {
+                    this->operator()(i,j) = ((this->operator()(i,0) * other(0,j)) +
+                                             (this->operator()(i,1) * other(1,j)) +
+                                             (this->operator()(i,2) * other(2,j)) +
+                                             (this->operator()(i,3) * other(3,j)));
+                }
             }
+
+            return;
         }
 
-        return;
-    }
-
-    matrix44_s operator*(const matrix44_s &other) const
-    {
-        matrix44_s m;
-
-        for(unsigned i = 0; i < sideLen; i++)
+        matrix44 operator*(const matrix44 &other) const
         {
-            for(unsigned j = 0; j < sideLen; j++)
+            matrix44 m;
+
+            for(unsigned i = 0; i < sideLen; i++)
             {
-                m(i,j) = ((this->operator()(i,0) * other(0,j)) +
-                          (this->operator()(i,1) * other(1,j)) +
-                          (this->operator()(i,2) * other(2,j)) +
-                          (this->operator()(i,3) * other(3,j)));
+                for(unsigned j = 0; j < sideLen; j++)
+                {
+                    m(i,j) = ((this->operator()(i,0) * other(0,j)) +
+                              (this->operator()(i,1) * other(1,j)) +
+                              (this->operator()(i,2) * other(2,j)) +
+                              (this->operator()(i,3) * other(3,j)));
+                }
             }
+
+            return m;
         }
 
-        return m;
-    }
-
-    double& operator()(const unsigned int i, const unsigned int j)
-    {
-        return elements[i+j*sideLen];
-    }
-
-    double operator()(const unsigned int i, const unsigned int j) const
-    {
-        return elements[i+j*sideLen];
-    }
-
-};
-
-struct matrix44_identity_s : public matrix44_s
-{
-    matrix44_identity_s()
-    {
-        elements[0] = 1;	elements[4] = 0;	elements[8]  = 0;	elements[12] = 0;
-        elements[1] = 0;	elements[5] = 1;	elements[9]  = 0;	elements[13] = 0;
-        elements[2] = 0;	elements[6] = 0;	elements[10] = 1;	elements[14] = 0;
-        elements[3] = 0;	elements[7] = 0;	elements[11] = 0;	elements[15] = 1;
-    }
-};
-
-struct matrix44_rotation_s : public matrix44_s
-{
-    matrix44_rotation_s(double x, double y, double z)
-    {
-        matrix44_s rx, ry, rz;
-
-        rx.elements[0] = 1;             rx.elements[4] = 0;              rx.elements[8]  = 0;                 rx.elements[12] = 0;
-        rx.elements[1] = 0;             rx.elements[5] = (double)cos(x);	 rx.elements[9]  = -(double)sin(x);     rx.elements[13] = 0;
-        rx.elements[2] = 0;             rx.elements[6] = (double)sin(x);   rx.elements[10] = (double)cos(x);      rx.elements[14] = 0;
-        rx.elements[3] = 0;             rx.elements[7] = 0;              rx.elements[11] = 0;                 rx.elements[15] = 1;
-
-        ry.elements[0] = (double)cos(y);  ry.elements[4] = 0;              ry.elements[8]  = -(double)sin(y);     ry.elements[12] = 0;
-        ry.elements[1] = 0;             ry.elements[5] = 1;              ry.elements[9]  = 0;                 ry.elements[13] = 0;
-        ry.elements[2] = (double)sin(y);  ry.elements[6] = 0;              ry.elements[10] = (double)cos(y);      ry.elements[14] = 0;
-        ry.elements[3] = 0;             ry.elements[7] = 0;              ry.elements[11] = 0;                 ry.elements[15] = 1;
-
-        rz.elements[0] = (double)cos(z);	rz.elements[4] = -(double)sin(z);	 rz.elements[8]  = 0;                 rz.elements[12] = 0;
-        rz.elements[1] = (double)sin(z);	rz.elements[5] = (double)cos(z);	 rz.elements[9]  = 0;                 rz.elements[13] = 0;
-        rz.elements[2] = 0;             rz.elements[6] = 0;              rz.elements[10] = 1;                 rz.elements[14] = 0;
-        rz.elements[3] = 0;             rz.elements[7] = 0;              rz.elements[11] = 0;                 rz.elements[15] = 1;
-
-        rx = (rx * ry * rz);
-
-        for (unsigned i = 0; i < 16; i++)
+        double& operator()(const unsigned int i, const unsigned int j)
         {
-            this->elements[i] = rx.elements[i];
+            return elements[i+j*sideLen];
         }
 
-        return;
-    }
-};
+        double operator()(const unsigned int i, const unsigned int j) const
+        {
+            return elements[i+j*sideLen];
+        }
 
-struct matrix44_translation_s : public matrix44_s
-{
-    matrix44_translation_s(double x, double y, double z)
+    };
+
+    struct identity_matrix : public matrix44
     {
-        elements[0] = 1;	elements[4] = 0;	elements[8]  = 0;	elements[12] = x;
-        elements[1] = 0;	elements[5] = 1;	elements[9]  = 0;	elements[13] = y;
-        elements[2] = 0;	elements[6] = 0;	elements[10] = 1;	elements[14] = z;
-        elements[3] = 0;	elements[7] = 0;	elements[11] = 0;	elements[15] = 1;
-    }
-};
+        identity_matrix()
+        {
+            elements[0] = 1;	elements[4] = 0;	elements[8]  = 0;	elements[12] = 0;
+            elements[1] = 0;	elements[5] = 1;	elements[9]  = 0;	elements[13] = 0;
+            elements[2] = 0;	elements[6] = 0;	elements[10] = 1;	elements[14] = 0;
+            elements[3] = 0;	elements[7] = 0;	elements[11] = 0;	elements[15] = 1;
+        }
+    };
 
-struct matrix44_perspective_s : public matrix44_s
-{
-    matrix44_perspective_s(double fov, double aspectRatio, double zNear, double zFar)
+    struct rotation_matrix : public matrix44
     {
-        double tanHalfFOV = tan(fov / 2);
-        double zRange = zNear - zFar;
+        rotation_matrix(double x, double y, double z)
+        {
+            matrix44 rx, ry, rz;
 
-        this->operator()(0, 0) = 1.0f / (tanHalfFOV * aspectRatio);	this->operator()(0, 1) = 0;		this->operator()(0, 2) = 0;                     this->operator()(0, 3) = 0;
-        this->operator()(1, 0) = 0;						this->operator()(1, 1) = 1.0f / tanHalfFOV;	this->operator()(1, 2) = 0;                     this->operator()(1, 3) = 0;
-        this->operator()(2, 0) = 0;						this->operator()(2, 1) = 0;					this->operator()(2, 2) = (-zNear -zFar)/zRange;	this->operator()(2, 3) = 2 * zFar * zNear / zRange;
-        this->operator()(3, 0) = 0;						this->operator()(3, 1) = 0;					this->operator()(3, 2) = 1;                     this->operator()(3, 3) = 0;
-    }
-};
+            rx.elements[0] = 1;      rx.elements[4] = 0;       rx.elements[8]  = 0;       rx.elements[12] = 0;
+            rx.elements[1] = 0;      rx.elements[5] = cos(x);  rx.elements[9]  = -sin(x); rx.elements[13] = 0;
+            rx.elements[2] = 0;      rx.elements[6] = sin(x);  rx.elements[10] = cos(x);  rx.elements[14] = 0;
+            rx.elements[3] = 0;      rx.elements[7] = 0;       rx.elements[11] = 0;       rx.elements[15] = 1;
 
-struct matrix44_scaling_s : public matrix44_s
-{
-    matrix44_scaling_s(double x, double y, double z)
+            ry.elements[0] = cos(y); ry.elements[4] = 0;       ry.elements[8]  = -sin(y); ry.elements[12] = 0;
+            ry.elements[1] = 0;      ry.elements[5] = 1;       ry.elements[9]  = 0;       ry.elements[13] = 0;
+            ry.elements[2] = sin(y); ry.elements[6] = 0;       ry.elements[10] = cos(y);  ry.elements[14] = 0;
+            ry.elements[3] = 0;      ry.elements[7] = 0;       ry.elements[11] = 0;       ry.elements[15] = 1;
+
+            rz.elements[0] = cos(z); rz.elements[4] = -sin(z); rz.elements[8]  = 0;       rz.elements[12] = 0;
+            rz.elements[1] = sin(z); rz.elements[5] = cos(z);  rz.elements[9]  = 0;       rz.elements[13] = 0;
+            rz.elements[2] = 0;      rz.elements[6] = 0;       rz.elements[10] = 1;       rz.elements[14] = 0;
+            rz.elements[3] = 0;      rz.elements[7] = 0;       rz.elements[11] = 0;       rz.elements[15] = 1;
+
+            rx = (rx * ry * rz);
+
+            for (unsigned i = 0; i < 16; i++)
+            {
+                this->elements[i] = rx.elements[i];
+            }
+
+            return;
+        }
+    };
+
+    struct translation_matrix : public matrix44
     {
-        elements[0] = x;	elements[4] = 0;	elements[8]  = 0;	elements[12] = 0;
-        elements[1] = 0;	elements[5] = y;	elements[9]  = 0;	elements[13] = 0;
-        elements[2] = 0;	elements[6] = 0;	elements[10] = z;	elements[14] = 0;
-        elements[3] = 0;	elements[7] = 0;	elements[11] = 0;	elements[15] = 1;
-    }
-};
+        translation_matrix(double x, double y, double z)
+        {
+            elements[0] = 1;	elements[4] = 0;	elements[8]  = 0;	elements[12] = x;
+            elements[1] = 0;	elements[5] = 1;	elements[9]  = 0;	elements[13] = y;
+            elements[2] = 0;	elements[6] = 0;	elements[10] = 1;	elements[14] = z;
+            elements[3] = 0;	elements[7] = 0;	elements[11] = 0;	elements[15] = 1;
+        }
+    };
 
-struct matrix44_screen_space_s : public matrix44_s
-{
-    matrix44_screen_space_s(double halfWidth, double halfHeight)
+    struct perspective_matrix : public matrix44
     {
-        elements[0] = halfWidth;	elements[4] = 0;            elements[8]  = 0;	elements[12] = halfWidth - 0.5;
-        elements[1] = 0;            elements[5] = -halfHeight;	elements[9]  = 0;	elements[13] = halfHeight - 0.5;
-        elements[2] = 0;            elements[6] = 0;            elements[10] = 1;	elements[14] = 0;
-        elements[3] = 0;            elements[7] = 0;            elements[11] = 0;	elements[15] = 1;
-    }
-};
+        perspective_matrix(double fov, double aspectRatio, double zNear, double zFar)
+        {
+            double tanHalfFOV = tan(fov / 2);
+            double zRange = zNear - zFar;
+
+            this->operator()(0, 0) = 1.0f / (tanHalfFOV * aspectRatio);	this->operator()(0, 1) = 0;		this->operator()(0, 2) = 0;                     this->operator()(0, 3) = 0;
+            this->operator()(1, 0) = 0;						this->operator()(1, 1) = 1.0f / tanHalfFOV;	this->operator()(1, 2) = 0;                     this->operator()(1, 3) = 0;
+            this->operator()(2, 0) = 0;						this->operator()(2, 1) = 0;					this->operator()(2, 2) = (-zNear -zFar)/zRange;	this->operator()(2, 3) = 2 * zFar * zNear / zRange;
+            this->operator()(3, 0) = 0;						this->operator()(3, 1) = 0;					this->operator()(3, 2) = 1;                     this->operator()(3, 3) = 0;
+        }
+    };
+
+    struct scaling_matrix : public matrix44
+    {
+        scaling_matrix(double x, double y, double z)
+        {
+            elements[0] = x;	elements[4] = 0;	elements[8]  = 0;	elements[12] = 0;
+            elements[1] = 0;	elements[5] = y;	elements[9]  = 0;	elements[13] = 0;
+            elements[2] = 0;	elements[6] = 0;	elements[10] = z;	elements[14] = 0;
+            elements[3] = 0;	elements[7] = 0;	elements[11] = 0;	elements[15] = 1;
+        }
+    };
+
+    struct screen_space_matrix : public matrix44
+    {
+        screen_space_matrix(double halfWidth, double halfHeight)
+        {
+            elements[0] = halfWidth;	elements[4] = 0;            elements[8]  = 0;	elements[12] = halfWidth - 0.5;
+            elements[1] = 0;            elements[5] = -halfHeight;	elements[9]  = 0;	elements[13] = halfHeight - 0.5;
+            elements[2] = 0;            elements[6] = 0;            elements[10] = 1;	elements[14] = 0;
+            elements[3] = 0;            elements[7] = 0;            elements[11] = 0;	elements[15] = 1;
+        }
+    };
+}
 
 #endif
 

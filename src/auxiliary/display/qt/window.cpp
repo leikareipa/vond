@@ -49,7 +49,7 @@ Window::~Window()
     return;
 }
 
-void Window::set_canvas_image(const image_s<uint8_t, 4> &image)
+void Window::set_canvas_image(const vond::image<uint8_t, 4> &image)
 {
     vond_assert(image.bpp() == 32, "Expected a 32-bit image.");
 
@@ -59,7 +59,7 @@ void Window::set_canvas_image(const image_s<uint8_t, 4> &image)
     return;
 }
 
-vector2_s<int> Window::mouse_move_delta(void)
+vond::vector2<int> Window::mouse_move_delta(void)
 {
     return {MOUSE_MOVE_DELTA.x(), MOUSE_MOVE_DELTA.y()};
 }

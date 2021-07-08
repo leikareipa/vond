@@ -79,27 +79,16 @@ int main(void)
         // The image buffers we'll render into. Note that the resolution determines
         // the render resolution, which is then upscaled to the resolution of the
         // window.
-        image_s<uint8_t, 4> pixelmap(320, 200, 32);
-        image_s<double, 1> depthmap(pixelmap.width(), pixelmap.height(), pixelmap.bpp());
+        vond::image<uint8_t, 4> renderBuffer(640, 400, 32);
+        vond::image<double, 1> depthMap(renderBuffer.width(), renderBuffer.height(), renderBuffer.bpp());
 
         // Load the landscape heightmap and texture map, as well as a polygon object
         // for testing.
         /// TODO: In the future, asset initialization will be handled somewhere other than here.
-        image_s<double, 1> terrainHeightmap(QImage("terrain_heightmap.png"));
-        image_s<uint8_t, 4> terrainTexture(QImage("terrain_texture.png"));
-        std::vector<triangle_s> tris2 = kmesh_mesh_triangles("untitled.vmf");
+        vond::image<double, 1> terrainHeightmap(QImage("height.png"));
+        vond::image<uint8_t, 4> terrainTexture(QImage("ground.png"));
 
-        for (triangle_s &tri: tris2)
-        {
-            for (unsigned i = 0; i < 3; i++)
-            {
-                tri.v[i].pos.x *= 0.01;
-                tri.v[i].pos.y *= 0.01;
-                tri.v[i].pos.z *= 0.01;
-            }
-        }
-
-        for (unsigned loops = 0; loops < 3; loops++)
+        for (unsigned loops = 0; loops < 2; loops++)
         {
             for (unsigned y = 1; y < terrainHeightmap.height()-1; y++)
             {
@@ -111,22 +100,34 @@ int main(void)
             }
         }
 
-        const auto terrainHeightmapSampler = [&terrainHeightmap](const double x, const double y)->color_s<double, 1>
+        const auto terrainHeightmapSampler = [&terrainHeightmap](const double x, const double y)->vond::color<double, 1>
         {
+            if (x < 0 || x > terrainHeightmap.width() ||
+                y < 0 || y > terrainHeightmap.height())
+            {
+                return {-100};
+            }
+
             return terrainHeightmap.interpolated_pixel_at(x, y);
         };
 
-        const auto terrainTextureSampler = [&terrainTexture](const double x, const double y)->color_s<uint8_t, 4>
+        const auto terrainTextureSampler = [&terrainTexture](const double x, const double y)->vond::color<uint8_t, 4>
         {
+            if (x < 0 || x > terrainTexture.width() ||
+                y < 0 || y > terrainTexture.height())
+            {
+                return {0, 0, 0, 255};
+            }
+
             return terrainTexture.interpolated_pixel_at(x, y);
         };
 
         /// TODO: In the future, camera initialization will be handled somewhere other than here.
-        camera_s camera;
+        vond::camera camera;
         camera.pos = {512, 200, 512};
         camera.orientation = {0.5, -0.3, 0};
         camera.zoom = 1;
-        camera.fov = 80;
+        camera.fov = 70;
 
         while (!PROGRAM_EXIT_REQUESTED)
         {
@@ -140,26 +141,23 @@ int main(void)
 
             // Prepare for the next frame.
             {
-                depthmap.fill({std::numeric_limits<double>::max()});
-                pixelmap.fill({0});
+                depthMap.fill({std::numeric_limits<double>::max()});
+                renderBuffer.fill({0});
                 ktext_clear_ui_text_entries();
             }
 
             // Render the next frame.
             {
                 ktext_add_ui_text(std::string("FPS: ") + std::to_string(avgFPS), {10, 20});
-
                 kd_update_input(&camera);
-
-                kr_draw_landscape(terrainHeightmapSampler, terrainTextureSampler, pixelmap, depthmap, camera);
-                kr_draw_triangles(tris2, pixelmap, depthmap, camera);
+                vond::render_landscape(terrainHeightmapSampler, terrainTextureSampler, renderBuffer, depthMap, camera);
 
                 renderTime = tim.elapsed();
             }
 
             // Paint the new frame to screen.
             {
-                kd_update_display(pixelmap);
+                kd_update_display(renderBuffer);
                 //kd_update_display(depthmap.as<uint8_t, 4>(0.7));
 
                 totalTime = tim.elapsed();
@@ -168,20 +166,20 @@ int main(void)
             // Handle any new user input.
             /// TODO: Implement proper input handling. This works for testing, though.
             {
-                vector3_s<double> dir = vector3_s<double>{0, 0, 0};
+                vond::vector3<double> dir = vond::vector3<double>{0, 0, 0};
 
                 if (kinput_is_moving_forward()) dir.z = 1;
                 if (kinput_is_moving_backward()) dir.z = -1;
                 if (kinput_is_moving_right()) dir.x = 1;
                 if (kinput_is_moving_left()) dir.x = -1;
 
-                dir *= (matrix44_rotation_s(0, camera.orientation.y, 0) * matrix44_rotation_s(camera.orientation.x, 0, 0));
-                dir = dir.normalized()*0.015;
+                dir *= (vond::rotation_matrix(0, camera.orientation.y, 0) * vond::rotation_matrix(camera.orientation.x, 0, 0));
+                dir = dir.normalized()*6;
                 camera.pos.x += dir.x;
                 camera.pos.y += dir.y;
                 camera.pos.z += dir.z;
 
-                camera.pos.y = terrainHeightmapSampler(camera.pos.x, camera.pos.z)[0] / 1.0 + 0.8;
+                //camera.pos.y = terrainHeightmapSampler(camera.pos.x, camera.pos.z)[0] / 1.0 + 0.8;
             }
 
             // Statistics.

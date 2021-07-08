@@ -1,21 +1,24 @@
-#ifndef TRIANGLE_H
-#define TRIANGLE_H
+#ifndef VOND_TRIANGLE_H
+#define VOND_TRIANGLE_H
 
 #include <string>
 #include "vond/image.h"
 #include "vond/vertex.h"
 
-struct triangle_material_s
+namespace vond
 {
-    std::string name = "Unnamed material";
-    color_s<uint8_t, 4> baseColor = {0};
-    image_s<uint8_t, 4> *texture = nullptr;
-};
+    struct triangle_material
+    {
+        std::string name = "Unnamed material";
+        vond::color<uint8_t, 4> baseColor = {0};
+        vond::image<uint8_t, 4> *texture = nullptr;
+    };
 
-struct triangle_s
-{
-    vertex_s v[3];
-    triangle_material_s material;
-};
+    struct triangle
+    {
+        vond::vertex v[3];
+        vond::triangle_material material;
+    };
+}
 
 #endif

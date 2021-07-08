@@ -18,12 +18,12 @@
 
 // Returns the triangles stored in the given mesh config file.
 //
-std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
+std::vector<vond::triangle> kmesh_mesh_triangles(const char *const meshFilename)
 {
     config_file_read_c meshFile(meshFilename);
 
-    std::vector<triangle_s> meshTriangles;
-    std::unordered_map<std::string/*material name*/, triangle_material_s> knownMaterials;
+    std::vector<vond::triangle> meshTriangles;
+    std::unordered_map<std::string/*material name*/, vond::triangle_material> knownMaterials;
 
     // Parse the mesh file to extract the materials and meshes in it.
     config_file_line_s line = meshFile.next_line();
@@ -66,7 +66,7 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                 meshFile.error_if_not((!materialName.empty()), "Encountered an empty material name.");
 
                 // Get the material's properties.
-                triangle_material_s material;
+                vond::triangle_material material;
                 material.baseColor = {127, 127, 127, 255};
                 material.name = materialName;
                 while (!meshFile.file_is_at_end())
@@ -103,7 +103,7 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                             meshFile.error_if_not(!material.texture, "Can't re-define the texture for a material.");
                             meshFile.error_if_not((line.params.size() == 1), "Expected one parameters for the material's texture filename.");
 
-                            material.texture = new image_s<uint8_t, 4>(QImage(QString::fromStdString(line.params.at(0))));
+                            material.texture = new vond::image<uint8_t, 4>(QImage(QString::fromStdString(line.params.at(0))));
 
                             break;
                         }
@@ -121,7 +121,7 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
             case 'o':       // Object.
             {
                 // Get all polygons (for now, we assume they're all triangles).
-                std::vector<triangle_s> triangles;
+                std::vector<vond::triangle> triangles;
                 line = meshFile.next_line();
                 while (!meshFile.file_is_at_end() &&
                        line.command == 'p' &&
@@ -132,11 +132,11 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                     meshFile.error_if_not(line.params.size() == 1, "Expected the polygon line to have one parameter.");
 
                     /// For now, assume we always have triangles rathern than other types of polygons.
-                    triangle_s tri;
-                    triangle_material_s material = knownMaterials.at(line.params.at(0));
+                    vond::triangle tri;
+                    vond::triangle_material material = knownMaterials.at(line.params.at(0));
 
                     // Get all vertices of this polygon.
-                    std::vector<vertex_s> vertices;
+                    std::vector<vond::vertex> vertices;
                     line = meshFile.next_line();
                     while (!meshFile.file_is_at_end() &&
                            line.command == 'v' &&
@@ -147,7 +147,7 @@ std::vector<triangle_s> kmesh_mesh_triangles(const char *const meshFilename)
                         meshFile.error_if_not(line.params.size() == 3, "Expected vertices to have three coordinates.");
 
                         // Extract the vertex data from the line.
-                        vertex_s vert;
+                        vond::vertex vert;
                         {
                             // In case no u,v coordinates are defined for this
                             // vertex later on, pre-initialize them to 0 here.

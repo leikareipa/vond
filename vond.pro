@@ -1,4 +1,4 @@
-DEFINES += ENFORCE_OPTIONAL_ASSERTS # Enable non-critical asserts. May perform slower, but will e.g. look to guard against buffer overflow in memory access.
+#DEFINES += ENFORCE_OPTIONAL_ASSERTS # Enable non-critical asserts. May perform slower, but will e.g. look to guard against buffer overflow in memory access.
 
 TEMPLATE = app
 QT       += core gui widgets
@@ -13,8 +13,8 @@ INCLUDEPATH += $$PWD/src/
 SOURCES += src/auxiliary/main.cpp \
     src/auxiliary/display/qt/display.cpp \
     src/auxiliary/display/qt/window.cpp \
-    src/vond/rasterizer_barycentric.cpp \
-    src/vond/rasterizer_scanline.cpp \
+    src/vond/rasterize_triangle_barycentric.cpp \
+    src/vond/rasterize_triangle_scanline.cpp \
     src/vond/render_landscape.cpp \
     src/auxiliary/display/qt/w_opengl.cpp \
     src/auxiliary/ui/text.cpp \
@@ -31,8 +31,8 @@ HEADERS += \
     src/auxiliary/main.h \
     src/vond/color.h \
     src/vond/image_mosaic.h \
-    src/vond/rasterizer_barycentric.h \
-    src/vond/rasterizer_scanline.h \
+    src/vond/rasterize_triangle_barycentric.h \
+    src/vond/rasterize_triangle_scanline.h \
     src/vond/rect.h \
     src/vond/render_landscape.h \
     src/vond/image.h \
@@ -49,13 +49,13 @@ HEADERS += \
     src/auxiliary/config_file_read.h \
     src/vond/vertex.h
 
-# C++. For GCC/Clang.
+QMAKE_CC = gcc-10
+QMAKE_CXX = g++-10
 QMAKE_CXXFLAGS += -g
-QMAKE_CXXFLAGS += -std=c++2a
+QMAKE_CXXFLAGS += -std=c++20
 QMAKE_CXXFLAGS += -O2
 QMAKE_CXXFLAGS += -Wall
 QMAKE_CXXFLAGS += -pipe
 QMAKE_CXXFLAGS += -pedantic
-
 QMAKE_CXXFLAGS += -fopenmp
 LIBS += -fopenmp

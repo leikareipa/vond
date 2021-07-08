@@ -33,7 +33,7 @@ namespace app_n
     static QApplication *const APP = new QApplication(ARGC, &ARGV);
 }
 
-void kd_update_display(const image_s<uint8_t, 4> &pixelmap)
+void kd_update_display(const vond::image<uint8_t, 4> &pixelmap)
 {
     static uint32_t fpsCnt = 0;
 
@@ -62,7 +62,7 @@ void kd_update_display(const image_s<uint8_t, 4> &pixelmap)
     return;
 }
 
-void kd_update_input(camera_s *const camera)
+void kd_update_input(vond::camera *const camera)
 {
     // Rotate the camera's viewing direction.
     {

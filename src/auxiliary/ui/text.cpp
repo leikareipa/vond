@@ -19,7 +19,7 @@ void ktext_clear_ui_text_entries(void)
     return;
 }
 
-void ktext_add_ui_text(const std::string text, const vector2_s<uint> screenCoords)
+void ktext_add_ui_text(const std::string text, const vond::vector2<uint> screenCoords)
 {
     TEXT_ENTRIES.push_back({text, screenCoords});
 

@@ -15,12 +15,12 @@
 struct text_entry_s
 {
     std::string text;
-    vector2_s<uint> coords;
+    vond::vector2<uint> coords;
 };
 
 void ktext_clear_ui_text_entries(void);
 
-void ktext_add_ui_text(const std::string text, const vector2_s<uint> screenCoords);
+void ktext_add_ui_text(const std::string text, const vond::vector2<uint> screenCoords);
 
 std::vector<text_entry_s> ktext_ui_text_entries(void);
 
