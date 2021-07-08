@@ -47,8 +47,9 @@ struct ray_s
     vond::vector3<double> dir;
 };
 
-void vond::render_landscape(std::function<vond::color<double, 1>(const double x, const double y)> groundHeightmapSampler,
-                            std::function<vond::color<uint8_t, 4>(const double x, const double y)> groundTextureSampler,
+void vond::render_landscape(std::function<vond::color<double, 1>(const double x, const double y)> heightmapSampler,
+                            std::function<vond::color<uint8_t, 4>(const double x, const double y)> textureSampler,
+                            std::function<vond::color<uint8_t, 4>(const vond::vector3<double> &direction)> skySampler,
                             vond::image<uint8_t, 4> &dstPixelmap,
                             vond::image<double, 1> &dstDepthmap,
                             const vond::camera &camera)
@@ -101,7 +102,6 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
                     }
 
                     ray.pos += (ray.dir * rayDepth);
-
                     stepsTaken = 0;
                 }
 
@@ -128,13 +128,13 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
                         }
 
                         // Get the height of the voxel that's directly below this ray.
-                        double voxelHeight = groundHeightmapSampler(ray.pos.x, ray.pos.z)[0];
+                        double voxelHeight = heightmapSampler(ray.pos.x, ray.pos.z)[0];
 
                         // Draw the voxel if the ray intersects it (i.e. if the voxel
                         // is taller than the ray's current height).
                         if (voxelHeight >= ray.pos.y)
                         {
-                            const vond::color<uint8_t, 4> color = groundTextureSampler(ray.pos.x, ray.pos.z);
+                            const vond::color<uint8_t, 4> color = textureSampler(ray.pos.x, ray.pos.z);
 
                             // If this pixel in the ground texture is fully transparent.
                             if (!color.channel_at(3))
@@ -162,27 +162,9 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
             {
                 for (; y < dstPixelmap.height(); y++)
                 {
-                    ray_s ray;
-
                     const double screenPlaneY = (2.0 * ((y + 0.5) / dstPixelmap.height()) - 1.0) * tanFov;
-
-                    vond::vector3<double> v = vond::vector3<double>{screenPlaneX, screenPlaneY, camera.zoom};
-                    v *= viewMatrix;
-
-                    // Aim the ray at this pixel.
-                    ray.dir = v.normalized();
-
-                    double rayHeight = abs(ray.dir.dot(vond::vector3<double>{0, 1, 0}));
-
-                    // The base horizon color when looking directly into the horizon.
-                    vond::color<uint8_t, 4> horizonColor = {125, 145, 175, 255};
-
-                    int colorAttenuation = std::min(115, (int)floor(190 * rayHeight * 1.1));
-
-                    const vond::color<uint8_t, 4> color = {uint8_t(horizonColor[0] - colorAttenuation),
-                                                           uint8_t(horizonColor[1] - colorAttenuation),
-                                                           uint8_t(horizonColor[2] - colorAttenuation),
-                                                           255};
+                    const auto rayDirection = (vond::vector3<double>{screenPlaneX, screenPlaneY, camera.zoom} * viewMatrix);
+                    const vond::color<uint8_t, 4> color = skySampler(rayDirection.normalized());
 
                     dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
                     dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {std::numeric_limits<double>::max()};

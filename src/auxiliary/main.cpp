@@ -100,12 +100,12 @@ int main(void)
             }
         }
 
-        const auto groundHeightmapSampler = [&groundHeightmap](const double x, const double y)->vond::color<double, 1>
+        const auto landscapeHeightmapSampler = [&groundHeightmap](const double x, const double y)->vond::color<double, 1>
         {
             return groundHeightmap.bilinear_sample(x, y);
         };
 
-        const auto groundTextureSampler = [&groundTexture](const double x, const double y)->vond::color<uint8_t, 4>
+        const auto landscapeTextureSampler = [&groundTexture](const double x, const double y)->vond::color<uint8_t, 4>
         {
             if ((x < 0) || (x > groundTexture.width()) ||
                 (y < 0) || (y > groundTexture.height()))
@@ -114,6 +114,21 @@ int main(void)
             }
 
             return groundTexture.bilinear_sample(x, y);
+        };
+
+        const auto landscapeSkySampler = [](const vond::vector3<double> &direction)->vond::color<uint8_t, 4>
+        {
+            // The color at the base of the horizon.
+            vond::color<int, 3> horizonColor = {105, 145, 180};
+
+            // The amount by which the base horizon color becomes darker towards the zenith.
+            const double rayZenithAngle = abs(direction.dot(vond::vector3<double>{0, 1, 0}));
+            const int zenithAttenuation = std::min(100, int(100 * rayZenithAngle));
+
+            return {uint8_t(std::min(255, std::max(0, (horizonColor.channel_at(0) - zenithAttenuation)))),
+                    uint8_t(std::min(255, std::max(0, (horizonColor.channel_at(1) - zenithAttenuation)))),
+                    uint8_t(std::min(255, std::max(0, (horizonColor.channel_at(2) - zenithAttenuation)))),
+                    255u};
         };
 
         /// TODO: In the future, camera initialization will be handled somewhere other than here.
@@ -144,7 +159,7 @@ int main(void)
             {
                 ktext_add_ui_text(std::string("FPS: ") + std::to_string(avgFPS), {10, 20});
                 kd_update_input(&camera);
-                vond::render_landscape(groundHeightmapSampler, groundTextureSampler, renderBuffer, depthMap, camera);
+                vond::render_landscape(landscapeHeightmapSampler, landscapeTextureSampler, landscapeSkySampler, renderBuffer, depthMap, camera);
 
                 renderTime = tim.elapsed();
             }
