@@ -137,7 +137,7 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
                             const vond::color<uint8_t, 4> color = groundTextureSampler(ray.pos.x, ray.pos.z);
 
                             // If this pixel in the ground texture is fully transparent.
-                            if (!color[3])
+                            if (!color.channel_at(3))
                             {
                                 goto draw_sky;
                             }

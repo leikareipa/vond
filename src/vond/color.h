@@ -16,7 +16,13 @@ namespace vond
     {
         T channel[N] = {0};
 
-        T& operator[](const std::size_t idx)
+        T& channel_at(const std::size_t idx)
+        {
+            vond_optional_assert((idx < N), "Overflowing color channels.");
+            return this->channel[idx];
+        }
+
+        T channel_at(const std::size_t idx) const
         {
             vond_optional_assert((idx < N), "Overflowing color channels.");
             return this->channel[idx];
@@ -24,7 +30,6 @@ namespace vond
 
         T operator[](const std::size_t idx) const
         {
-            vond_optional_assert((idx < N), "Overflowing color channels.");
             return this->channel[idx];
         }
 

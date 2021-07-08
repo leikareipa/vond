@@ -92,9 +92,9 @@ std::vector<vond::triangle> kmesh_mesh_triangles(const char *const meshFilename)
                         {
                             meshFile.error_if_not((line.params.size() == 3), "Expected three parameters for the material's color.");
 
-                            material.baseColor[0] = std::stoi(line.params.at(0));
-                            material.baseColor[1] = std::stoi(line.params.at(1));
-                            material.baseColor[2] = std::stoi(line.params.at(2));
+                            material.baseColor.channel_at(0) = std::stoi(line.params.at(0));
+                            material.baseColor.channel_at(1) = std::stoi(line.params.at(1));
+                            material.baseColor.channel_at(2) = std::stoi(line.params.at(2));
 
                             break;
                         }

@@ -75,7 +75,7 @@ namespace vond
                         {
                             for (unsigned i = 0; i < NumColorChannels; i++)
                             {
-                                targetPixel[i] = T(sourcePixel.value());
+                                targetPixel.channel_at(i) = T(sourcePixel.value());
                             }
 
                             break;
@@ -89,7 +89,7 @@ namespace vond
 
                             for (unsigned i = 0; i < NumColorChannels; i++)
                             {
-                                targetPixel[i] = T(c[i % 4]);
+                                targetPixel.channel_at(i) = T(c.channel_at(i % 4));
                             }
 
                             break;
@@ -155,7 +155,7 @@ namespace vond
                 const T c2 = std::lerp(pixels[((xFloored + 1) + yFloored       * this->width())][i],
                                        pixels[((xFloored + 1) + (yFloored + 1) * this->width())][i], yBias);
 
-                interpolatedPixel[i] = T(std::lerp(c1, c2, xBias));
+                interpolatedPixel.channel_at(i) = T(std::lerp(c1, c2, xBias));
             }
 
             return interpolatedPixel;
