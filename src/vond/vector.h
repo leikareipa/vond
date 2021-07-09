@@ -65,7 +65,7 @@ namespace vond
                         ((other.z - this->z) * (other.z - this->z)));
         }
 
-        vond::vector3<T> operator*(const double &x) const
+        vond::vector3<T> operator*(const double x) const
         {
             return {T(this->x * x),
                     T(this->y * x),

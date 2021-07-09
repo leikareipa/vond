@@ -31,7 +31,7 @@ static void init_system(void)
 {
     printf("Initializing the program...\n");
 
-    kd_acquire_display(1600, 900, "\"Vond\" by Tarpeeksi Hyvae Soft");
+    kd_acquire_display(1440, 900, "\"Vond\" by Tarpeeksi Hyvae Soft");
 
     return;
 }
@@ -79,47 +79,38 @@ int main(void)
         // The image buffers we'll render into. Note that the resolution determines
         // the render resolution, which is then upscaled to the resolution of the
         // window.
-        vond::image<uint8_t, 4> renderBuffer(640, 400, 32);
+        vond::image<uint8_t, 4> renderBuffer(360, 225, 32);
         vond::image<double, 1> depthMap(renderBuffer.width(), renderBuffer.height(), renderBuffer.bpp());
 
-        // Load the landscape heightmap and texture map, as well as a polygon object
-        // for testing.
         /// TODO: In the future, asset initialization will be handled somewhere other than here.
-        vond::image<double, 1> groundHeightmap(QImage("height.png"));
-        vond::image<uint8_t, 4> groundTexture(QImage("ground.png"));
+        vond::image<double, 1> landscapeHeightmap(QImage("height.png"));
+        vond::image<uint8_t, 4> landscapeTexture(QImage("ground.png"));
+        std::vector<vond::triangle> model = kmesh_mesh_triangles("untitled.vmf");
 
-        for (unsigned loops = 0; loops < 2; loops++)
-        {
-            for (unsigned y = 1; y < groundHeightmap.height()-1; y++)
-            {
-                for (unsigned x = 1; x < groundHeightmap.width()-1; x++)
-                {
-                    groundHeightmap.pixel_at(x, y) = groundHeightmap.bilinear_sample(x + 0.5, y + 0.5);
-                    groundTexture.pixel_at(x, y) = groundTexture.bilinear_sample(x + 0.5, y + 0.5);
-                }
-            }
-        }
+        landscapeHeightmap.bilinear_filter(4);
 
-        const auto landscapeHeightmapSampler = [&groundHeightmap](const double x, const double y)->vond::color<double, 1>
+        const auto landscapeHeightmapSampler = [&landscapeHeightmap](const double x, const double y)->vond::color<double, 1>
         {
-            return groundHeightmap.bilinear_sample(x, y);
+            return landscapeHeightmap.bilinear_sample(x, y);
         };
 
-        const auto landscapeTextureSampler = [&groundTexture](const double x, const double y)->vond::color<uint8_t, 4>
+        const auto landscapeTextureSampler = [&landscapeTexture](const double x, const double y)->vond::color<uint8_t, 4>
         {
-            if ((x < 0) || (x > groundTexture.width()) ||
-                (y < 0) || (y > groundTexture.height()))
+            if ((x < 0) || (x > landscapeTexture.width()) ||
+                (y < 0) || (y > landscapeTexture.height()))
             {
                 return {0, 0, 0, 0};
             }
 
-            return groundTexture.bilinear_sample(x, y);
+            return landscapeTexture.pixel_at(x, y);
         };
 
         const auto landscapeSkySampler = [](const vond::vector3<double> &direction)->vond::color<uint8_t, 4>
         {
             // The color at the base of the horizon.
             vond::color<int, 3> horizonColor = {105, 145, 180};
+
+            horizonColor *= 0.95;
 
             // The amount by which the base horizon color becomes darker towards the zenith.
             const double rayZenithAngle = abs(direction.dot(vond::vector3<double>{0, 1, 0}));
@@ -159,7 +150,9 @@ int main(void)
             {
                 ktext_add_ui_text(std::string("FPS: ") + std::to_string(avgFPS), {10, 20});
                 kd_update_input(&camera);
+
                 vond::render_landscape(landscapeHeightmapSampler, landscapeTextureSampler, landscapeSkySampler, renderBuffer, depthMap, camera);
+                vond::render_triangles(model, renderBuffer, depthMap, camera);
 
                 renderTime = tim.elapsed();
             }
@@ -167,7 +160,7 @@ int main(void)
             // Paint the new frame to screen.
             {
                 kd_update_display(renderBuffer);
-                //kd_update_display(depthmap.as<uint8_t, 4>(0.7));
+                //kd_update_display(depthMap.as<uint8_t, 4>(0.7));
 
                 totalTime = tim.elapsed();
             }
@@ -188,7 +181,7 @@ int main(void)
                 camera.pos.y += dir.y;
                 camera.pos.z += dir.z;
 
-                //camera.pos.y = terrainHeightmapSampler(camera.pos.x, camera.pos.z)[0] / 1.0 + 0.8;
+                //camera.pos.y = landscapeHeightmapSampler(camera.pos.x, camera.pos.z).channel_at(0) + 18;
             }
 
             // Statistics.

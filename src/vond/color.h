@@ -11,7 +11,7 @@
 
 namespace vond
 {
-    template <typename T, size_t N>
+    template <typename T, std::size_t N>
     struct color
     {
         T channel[N] = {0};
@@ -33,16 +33,20 @@ namespace vond
             return this->channel[idx];
         }
 
-        vond::color<T, N> operator*(const double scaler)
+        vond::color<T, N>& operator*=(const double scalar)
         {
-            vond::color<T, N> newColor;
-
             for (unsigned i = 0; i < N; i++)
             {
-                newColor.channel[i] = (this->channel[i] * scaler);
+                this->channel[i] *= scalar;
             }
 
-            return newColor;
+            return *this;
+        }
+
+        vond::color<T, N> operator*(const double scalar) const
+        {
+            auto color = *this;
+            return (color *= scalar);
         }
     };
 }

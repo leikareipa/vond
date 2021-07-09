@@ -131,6 +131,22 @@ namespace vond
             return pixels[(x + y * this->width())];
         }
 
+        void bilinear_filter(const unsigned numIterations = 1)
+        {
+            for (unsigned i = 0; i < numIterations; i++)
+            {
+                for (unsigned y = 1; y < this->height()-1; y++)
+                {
+                    for (unsigned x = 1; x < this->width()-1; x++)
+                    {
+                        this->pixel_at(x, y) = this->bilinear_sample(x + 0.5, y + 0.5);
+                    }
+                }
+            }
+
+            return;
+        }
+
         vond::color<T, NumColorChannels> bilinear_sample(double x, double y) const
         {
             std::tie(x, y) = this->bounds_checked_coordinates(x, y);
@@ -243,8 +259,7 @@ namespace vond
                     for (unsigned i = 0; i < NumColorChannels2; i++)
                     {
                         const double convertedValue = double(this->pixel_at(x, y)[i % NumColorChannels] * scale);
-
-                        newImage.pixel_at(x, y)[i] = T2(std::max(low, std::min(high, convertedValue)));
+                        newImage.pixel_at(x, y).channel_at(i) = T2(std::max(low, std::min(high, convertedValue)));
                     }
                 }
             }
