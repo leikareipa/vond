@@ -91,7 +91,7 @@ int main(void)
 
         const auto landscapeHeightmapSampler = [&landscapeHeightmap](const double x, const double y)->vond::color<double, 1>
         {
-            return landscapeHeightmap.bilinear_sample(x, y);
+            return landscapeHeightmap.pixel_at(x, y);
         };
 
         const auto landscapeTextureSampler = [&landscapeTexture](const double x, const double y)->vond::color<uint8_t, 4>

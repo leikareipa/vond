@@ -30,7 +30,7 @@ namespace vond
             width_(width),
             height_(height),
             bpp_(bpp),
-            pixels(new vond::color<T, NumColorChannels>[width * height])
+            pixels_(new vond::color<T, NumColorChannels>[width * height])
         {
             vond_assert(((this->width() > 0) &&
                     (this->height() > 0) &&
@@ -43,19 +43,19 @@ namespace vond
         }
 
         image(const QImage &qImage) :
-            image(this->from_qimage(qImage))
+            image(this->from_QImage(qImage))
         {
             return;
         }
 
         ~image(void)
         {
-            delete [] pixels;
+            delete [] pixels_;
 
             return;
         }
 
-        static vond::image<T, NumColorChannels> from_qimage(const QImage &qImage)
+        static vond::image<T, NumColorChannels> from_QImage(const QImage &qImage)
         {
             vond_assert(!qImage.isNull(), "Was asked to create an image out of a null QImage.");
 
@@ -125,10 +125,10 @@ namespace vond
         {
             std::tie(x, y) = this->bounds_checked_coordinates(x, y);
 
-            vond_optional_assert(pixels, "Tried to access the pixels of a null image.");
+            vond_optional_assert(pixels_, "Tried to access the pixels of a null image.");
             vond_optional_assert(((x < this->width()) && (y < this->height())), "Tried to access an image pixel out of bounds.");
 
-            return pixels[(x + y * this->width())];
+            return pixels_[(x + y * this->width())];
         }
 
         void bilinear_filter(const unsigned numIterations = 1)
@@ -151,7 +151,7 @@ namespace vond
         {
             std::tie(x, y) = this->bounds_checked_coordinates(x, y);
 
-            vond_optional_assert(pixels, "Tried to access the pixels of a null image.");
+            vond_optional_assert(pixels_, "Tried to access the pixels of a null image.");
             vond_optional_assert(((x < this->width()) && (y < this->height())), "Tried to access an image pixel out of bounds.");
 
             unsigned xFloored = floor(x);
@@ -166,10 +166,10 @@ namespace vond
 
             for (unsigned i = 0; i < NumColorChannels; i++)
             {
-                const T c1 = std::lerp(pixels[(xFloored       + yFloored       * this->width())][i],
-                                       pixels[(xFloored       + (yFloored + 1) * this->width())][i], yBias);
-                const T c2 = std::lerp(pixels[((xFloored + 1) + yFloored       * this->width())][i],
-                                       pixels[((xFloored + 1) + (yFloored + 1) * this->width())][i], yBias);
+                const T c1 = std::lerp(pixels_[(xFloored       + yFloored       * this->width())][i],
+                                       pixels_[(xFloored       + (yFloored + 1) * this->width())][i], yBias);
+                const T c2 = std::lerp(pixels_[((xFloored + 1) + yFloored       * this->width())][i],
+                                       pixels_[((xFloored + 1) + (yFloored + 1) * this->width())][i], yBias);
 
                 interpolatedPixel.channel_at(i) = T(std::lerp(c1, c2, xBias));
             }
@@ -179,7 +179,7 @@ namespace vond
 
         const uint8_t* pixel_array(void) const
         {
-            return (uint8_t*)this->pixels;
+            return (uint8_t*)this->pixels_;
         }
 
         vond::image<T, NumColorChannels>& fill_channel(const unsigned channelIdx, const T fillValue)
@@ -275,7 +275,7 @@ namespace vond
         const unsigned width_;
         const unsigned height_;
         const unsigned bpp_;
-        vond::color<T, NumColorChannels> *const pixels;
+        vond::color<T, NumColorChannels> *const pixels_;
     };
 }
 

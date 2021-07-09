@@ -41,6 +41,8 @@ static const double RAY_SKIP_MULTIPLIER =
         : (DETAIL_LEVEL == detail_level_e::l25)? 0.0008
         : 0.001;
 
+static const unsigned PIXEL_WIDTH_MULTIPLIER = 1;
+
 struct ray_s
 {
     vond::vector3<double> pos;
@@ -61,11 +63,11 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
     const double aspectRatio = (dstPixelmap.width() / double(dstPixelmap.height()));
     const double tanFov = tan((camera.fov / 2.0) * (M_PI / 180.0));
     const vond::matrix44 viewMatrix = (vond::rotation_matrix(0, camera.orientation.y, 0) *
-                                     vond::rotation_matrix(camera.orientation.x, 0, 0));
+                                       vond::rotation_matrix(camera.orientation.x, 0, 0));
 
     // Loop through each horizontal slice on the screen.
     #pragma omp parallel for
-    for (unsigned x = 0; x < dstPixelmap.width(); x++)
+    for (unsigned x = 0; x < dstPixelmap.width(); x += PIXEL_WIDTH_MULTIPLIER)
     {
         unsigned stepsTaken = 0;    // How many steps we've traced along the current vertical pixel.
         unsigned rayDepth = 0;      // How many steps the ray has traced into the current horizontal slice.
@@ -76,6 +78,7 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
         // vertical column, starting from the bottom of the screen and working up.
         {
             unsigned y = 0;
+
             for (; y < dstPixelmap.height(); y++)
             {
                 const double screenPlaneY = ((2.0 * ((y + 0.5) / dstPixelmap.height()) - 1.0) * tanFov);
@@ -144,8 +147,11 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
 
                             const double depth = ray.pos.distance_to(camera.pos);
 
-                            dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
-                            dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {depth};
+                            for (unsigned i = 0; i < PIXEL_WIDTH_MULTIPLIER; i++)
+                            {
+                                dstPixelmap.pixel_at((x + i), (dstPixelmap.height() - y - 1)) = color;
+                                dstDepthmap.pixel_at((x + i), (dstDepthmap.height() - y - 1)) = {depth};
+                            }
 
                             break;
                         }
@@ -166,8 +172,11 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
                     const auto rayDirection = (vond::vector3<double>{screenPlaneX, screenPlaneY, camera.zoom} * viewMatrix);
                     const vond::color<uint8_t, 4> color = skySampler(rayDirection.normalized());
 
-                    dstPixelmap.pixel_at(x, (dstPixelmap.height() - y - 1)) = color;
-                    dstDepthmap.pixel_at(x, (dstDepthmap.height() - y - 1)) = {std::numeric_limits<double>::max()};
+                    for (unsigned i = 0; i < PIXEL_WIDTH_MULTIPLIER; i++)
+                    {
+                        dstPixelmap.pixel_at((x + i), (dstPixelmap.height() - y - 1)) = color;
+                        dstDepthmap.pixel_at((x + i), (dstDepthmap.height() - y - 1)) = {std::numeric_limits<double>::max()};
+                    }
                 }
             }
         }
