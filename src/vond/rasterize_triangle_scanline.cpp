@@ -122,7 +122,7 @@ static void fill_split_triangle(const vond::vertex *peak,
                                 vond::image<uint8_t, 4> &dstPixelmap,
                                 vond::image<double, 1> &dstDepthmap)
 {
-    vond_assert((base1->pos.y == base2->pos.y),
+    vond_assert((base1->position[1] == base2->position[1]),
              "The software triangle filler was given a malformed triangle. Expected a flat base.");
 
     // Values to be interpolated vertically as we render the triangle.
@@ -134,15 +134,15 @@ static void fill_split_triangle(const vond::vertex *peak,
     // Figure out which corner of the base is on the left/right in screen space.
     const vond::vertex *leftVert = base2;
     const vond::vertex *rightVert = base1;
-    if (base1->pos.x < base2->pos.x)
+    if (base1->position[0] < base2->position[0])
     {
         leftVert = base1;
         rightVert = base2;
     }
 
     // The top and bottom y coordinates of the triangle.
-    int startRow = peak->pos.y;
-    int endRow = base1->pos.y;
+    int startRow = peak->position[1];
+    int endRow = base1->position[1];
 
     // Detect whether the triangle is the top or bottom half of the split.
     if (startRow > endRow)
@@ -173,14 +173,14 @@ static void fill_split_triangle(const vond::vertex *peak,
 
         std::tie(paramsLeft.invW, deltasLeft.invW) = make_params((1 / leftVert->w), (1 / peak->w), !isDownTri);
         std::tie(paramsRight.invW, deltasRight.invW) = make_params((1 / rightVert->w), (1 / peak->w), !isDownTri);
-        std::tie(paramsLeft.startX, deltasLeft.startX) = make_params(leftVert->pos.x, peak->pos.x, !isDownTri);
-        std::tie(paramsRight.startX, deltasRight.startX) = make_params(rightVert->pos.x, peak->pos.x, !isDownTri);
+        std::tie(paramsLeft.startX, deltasLeft.startX) = make_params(leftVert->position[0], peak->position[0], !isDownTri);
+        std::tie(paramsRight.startX, deltasRight.startX) = make_params(rightVert->position[0], peak->position[0], !isDownTri);
         std::tie(paramsLeft.u, deltasLeft.u) = make_params((leftVert->uv[0] / leftVert->w), (peak->uv[0] / peak->w), !isDownTri);
         std::tie(paramsLeft.v, deltasLeft.v) = make_params((leftVert->uv[1] / leftVert->w), (peak->uv[1] / peak->w), !isDownTri);
         std::tie(paramsRight.u, deltasRight.u) = make_params((rightVert->uv[0] / rightVert->w), (peak->uv[0] / peak->w), !isDownTri);
         std::tie(paramsRight.v, deltasRight.v) = make_params((rightVert->uv[1] / rightVert->w), (peak->uv[1] / peak->w), !isDownTri);
-        std::tie(paramsLeft.depth, deltasLeft.depth) = make_params((leftVert->pos.z / leftVert->w), (peak->pos.z / peak->w), !isDownTri);
-        std::tie(paramsRight.depth, deltasRight.depth) = make_params((rightVert->pos.z / rightVert->w), (peak->pos.z / peak->w), !isDownTri);
+        std::tie(paramsLeft.depth, deltasLeft.depth) = make_params((leftVert->position[2] / leftVert->w), (peak->position[2] / peak->w), !isDownTri);
+        std::tie(paramsRight.depth, deltasRight.depth) = make_params((rightVert->position[2] / rightVert->w), (peak->position[2] / peak->w), !isDownTri);
     }
 
     // Bounds-check to make sure we're not going to draw outside of the screen area
@@ -224,15 +224,15 @@ void vond::rasterize_triangle::scanline(const vond::triangle &tri,
     const vond::vertex *high = &tri.v[0];
     const vond::vertex *mid = &tri.v[1];
     const vond::vertex *low = &tri.v[2];
-    if (low->pos.y < mid->pos.y)
+    if (low->position[1] < mid->position[1])
     {
         std::swap(low, mid);
     }
-    if (mid->pos.y < high->pos.y)
+    if (mid->position[1] < high->position[1])
     {
         std::swap(mid, high);
     }
-    if (low->pos.y < mid->pos.y)
+    if (low->position[1] < mid->position[1])
     {
         std::swap(low, mid);
     }
@@ -240,10 +240,10 @@ void vond::rasterize_triangle::scanline(const vond::triangle &tri,
     // Split the triangle into two parts, one pointing up and the other down.
     // (Split algo from Bastian Molkenthin's www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html.)
     vond::vertex splitBase;
-    const double splitRatio = ((mid->pos.y - high->pos.y) / (double)(low->pos.y - high->pos.y));
-    splitBase.pos.x = (high->pos.x + ((low->pos.x - high->pos.x) * splitRatio));
-    splitBase.pos.y = mid->pos.y;
-    splitBase.pos.z = std::lerp(high->pos.z, low->pos.z, splitRatio);
+    const double splitRatio = ((mid->position[1] - high->position[1]) / (double)(low->position[1] - high->position[1]));
+    splitBase.position[0] = (high->position[0] + ((low->position[0] - high->position[0]) * splitRatio));
+    splitBase.position[1] = mid->position[1];
+    splitBase.position[2] = std::lerp(high->position[2], low->position[2], splitRatio);
     splitBase.w = std::lerp(high->w, low->w, splitRatio);
     splitBase.uv[0] = std::lerp(high->uv[0], low->uv[0], splitRatio);
     splitBase.uv[1] = std::lerp(high->uv[1], low->uv[1], splitRatio);

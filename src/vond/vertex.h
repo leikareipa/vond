@@ -14,20 +14,20 @@ namespace vond
 {
     struct vertex
     {
-        vond::vector3<double> pos = {0, 0, 0};
+        vond::vector3<double> position = {0, 0, 0};
+        vond::vector2<double> uv = {0, 0};
         double w = 1;
-        double uv[2] = {0, 0};
 
         void transform(const vond::matrix44 &mat)
         {
-            const decltype(this->pos.x) x0 = ((mat.elements[0] * this->pos.x) + (mat.elements[4] * this->pos.y) + (mat.elements[ 8] * this->pos.z) + (mat.elements[12] * this->w));
-            const decltype(this->pos.y) y0 = ((mat.elements[1] * this->pos.x) + (mat.elements[5] * this->pos.y) + (mat.elements[ 9] * this->pos.z) + (mat.elements[13] * this->w));
-            const decltype(this->pos.z) z0 = ((mat.elements[2] * this->pos.x) + (mat.elements[6] * this->pos.y) + (mat.elements[10] * this->pos.z) + (mat.elements[14] * this->w));
-            const decltype(this->w)     w0 = ((mat.elements[3] * this->pos.x) + (mat.elements[7] * this->pos.y) + (mat.elements[11] * this->pos.z) + (mat.elements[15] * this->w));
+            double x0 = ((mat.elements[0] * this->position[0]) + (mat.elements[4] * this->position[1]) + (mat.elements[ 8] * this->position[2]) + (mat.elements[12] * this->w));
+            double y0 = ((mat.elements[1] * this->position[0]) + (mat.elements[5] * this->position[1]) + (mat.elements[ 9] * this->position[2]) + (mat.elements[13] * this->w));
+            double z0 = ((mat.elements[2] * this->position[0]) + (mat.elements[6] * this->position[1]) + (mat.elements[10] * this->position[2]) + (mat.elements[14] * this->w));
+            double w0 = ((mat.elements[3] * this->position[0]) + (mat.elements[7] * this->position[1]) + (mat.elements[11] * this->position[2]) + (mat.elements[15] * this->w));
 
-            this->pos.x = x0;
-            this->pos.y = y0;
-            this->pos.z = z0;
+            this->position[0] = x0;
+            this->position[1] = y0;
+            this->position[2] = z0;
             this->w = w0;
 
             return;

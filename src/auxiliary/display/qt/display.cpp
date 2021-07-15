@@ -13,7 +13,8 @@
 #include <QWidget>
 #include <QDebug>
 #include "auxiliary/display/qt/window.h"
-#include "vond/render.h"
+#include "vond/render_landscape.h"
+#include "vond/render_triangles.h"
 #include "vond/camera.h"
 #include "vond/assert.h"
 
@@ -69,12 +70,12 @@ void kd_update_input(vond::camera *const camera)
         const double rotSpeed = 0.003;
         const auto mouseDelta = WINDOW->mouse_move_delta();
 
-        camera->orientation.x -= (mouseDelta.y * rotSpeed);
-        camera->orientation.y += (mouseDelta.x * rotSpeed);
+        camera->orientation[0] -= (mouseDelta[1] * rotSpeed);
+        camera->orientation[1] += (mouseDelta[0] * rotSpeed);
 
-        if (fabs(camera->orientation.y) > (M_PI * 2))
+        if (fabs(camera->orientation[1]) > (M_PI * 2))
         {
-            camera->orientation.y = 0;
+            camera->orientation[1] = 0;
         }
 
         WINDOW->reset_mouse_move_delta();

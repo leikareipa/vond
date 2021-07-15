@@ -11,8 +11,8 @@
 #include "vond/matrix.h"
 #include "vond/vector.h"
 #include "vond/assert.h"
-#include "vond/render.h"
 #include "vond/image.h"
+#include "vond/render_landscape.h"
 
 // The maximum number of steps from the camera that rays are traced. If the ray
 // exceeds the bounds of the heightmap, it'll be wrapped around it.
@@ -62,8 +62,8 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
 
     const double aspectRatio = (dstPixelmap.width() / double(dstPixelmap.height()));
     const double tanFov = tan((camera.fov / 2.0) * (M_PI / 180.0));
-    const vond::matrix44 viewMatrix = (vond::rotation_matrix(0, camera.orientation.y, 0) *
-                                       vond::rotation_matrix(camera.orientation.x, 0, 0));
+    const vond::matrix44 viewMatrix = (vond::rotation_matrix(0, camera.orientation[1], 0) *
+                                       vond::rotation_matrix(camera.orientation[0], 0, 0));
 
     // Loop through each horizontal slice on the screen.
     #pragma omp parallel for
@@ -90,7 +90,7 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
                 {
                     const vond::vector3<double> view = (vond::vector3<double>{screenPlaneX, screenPlaneY, camera.zoom} * viewMatrix);
 
-                    ray.pos = camera.pos;
+                    ray.pos = camera.position;
                     ray.dir = (view.normalized() * RAY_STEP_SIZE);
                 }
 
@@ -112,7 +112,7 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
                 {
                     // Don't trace rays that are directed upward and above the maximum
                     // height of the terrain.
-                    if ((ray.pos.y > 255) && ray.dir.y > 0)
+                    if ((ray.pos[1] > 255) && (ray.dir[1] >= 0))
                     {
                         break;
                     }
@@ -123,21 +123,14 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
                     // to screen, and tracing for this screen slice ends.
                     for (; rayDepth < (MAX_RAY_LENGTH / RAY_STEP_SIZE); stepsTaken++)
                     {
-                        // Don't trace rays that are directed upward and above the maximum
-                        // height of the terrain.
-                        if ((ray.pos.y > 255) && (ray.dir.y > 0))
-                        {
-                            goto draw_sky;
-                        }
-
                         // Get the height of the voxel that's directly below this ray.
-                        double voxelHeight = heightmapSampler(ray.pos.x, ray.pos.z)[0];
+                        double voxelHeight = heightmapSampler(ray.pos[0], ray.pos[2]).channel_at(0);
 
                         // Draw the voxel if the ray intersects it (i.e. if the voxel
                         // is taller than the ray's current height).
-                        if (voxelHeight >= ray.pos.y)
+                        if (voxelHeight >= ray.pos[1])
                         {
-                            const vond::color<uint8_t, 4> color = textureSampler(ray.pos.x, ray.pos.z);
+                            const vond::color<uint8_t, 4> color = textureSampler(ray.pos[0], ray.pos[2]);
 
                             // If this pixel in the ground texture is fully transparent.
                             if (!color.channel_at(3))
@@ -145,7 +138,7 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
                                 goto draw_sky;
                             }
 
-                            const double depth = ray.pos.distance_to(camera.pos);
+                            const double depth = ray.pos.distance_to(camera.position);
 
                             for (unsigned i = 0; i < PIXEL_WIDTH_MULTIPLIER; i++)
                             {
@@ -155,10 +148,17 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
 
                             break;
                         }
-                        
+
                         const unsigned extraSteps = (rayDepth * RAY_SKIP_MULTIPLIER);
                         ray.pos += (ray.dir * (extraSteps + 1));
                         rayDepth += (extraSteps + 1);
+
+                        // Don't trace rays that are directed upward and above the maximum
+                        // height of the terrain.
+                        if ((ray.pos[1] > 255) && (ray.dir[1] >= 0))
+                        {
+                            goto draw_sky;
+                        }
                     }
                 }
             }
@@ -166,6 +166,12 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
             // Draw the sky for the rest of this screen slice's height.
             draw_sky:
             {
+                // Kludge fix for there sometimes being 1 pixel thin holes between the terrain and the sky.
+                if ((y > 0) && (y < (dstPixelmap.height() - 1)))
+                {
+                    y--;
+                }
+
                 for (; y < dstPixelmap.height(); y++)
                 {
                     const double screenPlaneY = (2.0 * ((y + 0.5) / dstPixelmap.height()) - 1.0) * tanFov;

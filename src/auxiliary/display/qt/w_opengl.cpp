@@ -14,7 +14,6 @@
 #include <QPainter>
 #include "auxiliary/display/qt/w_opengl.h"
 #include "auxiliary/display.h"
-#include "vond/render.h"
 #include "vond/image.h"
 #include "auxiliary/ui.h"
 
@@ -81,7 +80,7 @@ void OGLWidget::paintGL()
         auto uiText = ktext_ui_text_entries();
         for (const auto &text: uiText)
         {
-            painter.drawText(text.coords.x, text.coords.y, text.text.c_str());
+            painter.drawText(text.coords[0], text.coords[1], text.text.c_str());
         }
     }
 

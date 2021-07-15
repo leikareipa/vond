@@ -16,7 +16,8 @@
 #include <deque>
 #include "auxiliary/config_file_read.h"
 #include "auxiliary/display.h"
-#include "vond/render.h"
+#include "vond/render_landscape.h"
+#include "vond/render_triangles.h"
 #include "vond/assert.h"
 #include "vond/camera.h"
 #include "vond/image.h"
@@ -79,7 +80,7 @@ int main(void)
         // The image buffers we'll render into. Note that the resolution determines
         // the render resolution, which is then upscaled to the resolution of the
         // window.
-        vond::image<uint8_t, 4> renderBuffer(360, 225, 32);
+        vond::image<uint8_t, 4> renderBuffer(480, 300, 32);
         vond::image<double, 1> depthMap(renderBuffer.width(), renderBuffer.height(), renderBuffer.bpp());
 
         /// TODO: In the future, asset initialization will be handled somewhere other than here.
@@ -102,10 +103,10 @@ int main(void)
                 return {0, 0, 0, 0};
             }
 
-            return landscapeTexture.pixel_at(x, y);
+            return landscapeTexture.bilinear_sample(x, y);
         };
 
-        const auto landscapeSkySampler = [](const vond::vector3<double> &direction)->vond::color<uint8_t, 4>
+        const auto landscapeSkySampler = [&](const vond::vector3<double> &direction)->vond::color<uint8_t, 4>
         {
             // The color at the base of the horizon.
             vond::color<int, 3> horizonColor = {105, 145, 180};
@@ -124,7 +125,7 @@ int main(void)
 
         /// TODO: In the future, camera initialization will be handled somewhere other than here.
         vond::camera camera;
-        camera.pos = {512, 200, 512};
+        camera.position = {512, 200, 512};
         camera.orientation = {0.5, -0.3, 0};
         camera.zoom = 1;
         camera.fov = 70;
@@ -152,7 +153,7 @@ int main(void)
                 kd_update_input(&camera);
 
                 vond::render_landscape(landscapeHeightmapSampler, landscapeTextureSampler, landscapeSkySampler, renderBuffer, depthMap, camera);
-                vond::render_triangles(model, renderBuffer, depthMap, camera);
+                //vond::render_triangles(model, renderBuffer, depthMap, camera);
 
                 renderTime = tim.elapsed();
             }
@@ -170,18 +171,18 @@ int main(void)
             {
                 vond::vector3<double> dir = vond::vector3<double>{0, 0, 0};
 
-                if (kinput_is_moving_forward()) dir.z = 1;
-                if (kinput_is_moving_backward()) dir.z = -1;
-                if (kinput_is_moving_right()) dir.x = 1;
-                if (kinput_is_moving_left()) dir.x = -1;
+                if (kinput_is_moving_forward()) dir[2] = 1;
+                if (kinput_is_moving_backward()) dir[2] = -1;
+                if (kinput_is_moving_right()) dir[0] = 1;
+                if (kinput_is_moving_left()) dir[0] = -1;
 
-                dir *= (vond::rotation_matrix(0, camera.orientation.y, 0) * vond::rotation_matrix(camera.orientation.x, 0, 0));
-                dir = dir.normalized()*6;
-                camera.pos.x += dir.x;
-                camera.pos.y += dir.y;
-                camera.pos.z += dir.z;
+                dir *= (vond::rotation_matrix(0, camera.orientation[1], 0) * vond::rotation_matrix(camera.orientation[0], 0, 0));
+                dir = dir.normalized()*0.15;
+                camera.position[0] += dir[0];
+                camera.position[1] += dir[1];
+                camera.position[2] += dir[2];
 
-                //camera.pos.y = landscapeHeightmapSampler(camera.pos.x, camera.pos.z).channel_at(0) + 18;
+                camera.position[1] = landscapeHeightmap.bilinear_sample(camera.position[0], camera.position[2]).channel_at(0) + 2;
             }
 
             // Statistics.

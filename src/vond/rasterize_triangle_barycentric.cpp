@@ -27,27 +27,27 @@ struct precomputed_params_s
 // Superficial modifications in 2020 by Tarpeeksi Hyvae Soft.
 static vond::vector3<double> get_barycentric_coords(const vond::triangle &t, const int x, const int y)
 {
-    const vond::vector3<double> e1 = {(t.v[2].pos.x - t.v[0].pos.x),
-                                  (t.v[1].pos.x - t.v[0].pos.x),
-                                  (t.v[0].pos.x - x)};
+    const vond::vector3<double> e1 = {(t.v[2].position[0] - t.v[0].position[0]),
+                                      (t.v[1].position[0] - t.v[0].position[0]),
+                                      (t.v[0].position[0] - x)};
 
-    const vond::vector3<double> e2 = {(t.v[2].pos.y - t.v[0].pos.y),
-                                  (t.v[1].pos.y - t.v[0].pos.y),
-                                  (t.v[0].pos.y - y)};
+    const vond::vector3<double> e2 = {(t.v[2].position[1] - t.v[0].position[1]),
+                                      (t.v[1].position[1] - t.v[0].position[1]),
+                                      (t.v[0].position[1] - y)};
 
     const vond::vector3<double> u = e1.cross(e2);
 
     // If the triangle is degenerate.
-    if (std::abs(u.z) < 1)
+    if (std::abs(u[2]) < 1)
     {
         return {-1, -1, -1};
     }
 
-    const double invZ = (1 / u.z);
+    const double invZ = (1 / u[2]);
 
-    return {(1 - ((u.x + u.y) * invZ)),
-            (u.y * invZ),
-            (u.x * invZ)};
+    return {(1 - ((u[0] + u[1]) * invZ)),
+            (u[1] * invZ),
+            (u[0] * invZ)};
 }
 
 // Precomputes and returns for the given triangle and screen rectangle certain
@@ -79,13 +79,13 @@ static precomputed_params_s get_precomputed_parameters(const vond::triangle &tri
         const double sX = (1.0 / params.boundingRect.width());
         const double sY = (1.0 / params.boundingRect.height());
 
-        params.xStep = vond::vector3<double>{std::lerp(bcTopLeft.x, bcTopRight.x, sX),
-                                         std::lerp(bcTopLeft.y, bcTopRight.y, sX),
-                                         std::lerp(bcTopLeft.z, bcTopRight.z, sX)} - bcTopLeft;
+        params.xStep = vond::vector3<double>{std::lerp(bcTopLeft[0], bcTopRight[0], sX),
+                                             std::lerp(bcTopLeft[1], bcTopRight[1], sX),
+                                             std::lerp(bcTopLeft[2], bcTopRight[2], sX)} - bcTopLeft;
 
-        params.yStep = vond::vector3<double>{std::lerp(bcTopLeft.x, bcBotLeft.x, sY),
-                                         std::lerp(bcTopLeft.y, bcBotLeft.y, sY),
-                                         std::lerp(bcTopLeft.z, bcBotLeft.z, sY)} - bcTopLeft;
+        params.yStep = vond::vector3<double>{std::lerp(bcTopLeft[0], bcBotLeft[0], sY),
+                                             std::lerp(bcTopLeft[1], bcBotLeft[1], sY),
+                                             std::lerp(bcTopLeft[2], bcBotLeft[2], sY)} - bcTopLeft;
 
         params.topLeft = bcTopLeft;
     }
@@ -107,7 +107,7 @@ void vond::rasterize_triangle::barycentric(const vond::triangle &tri,
     // Some triangles get sub-pixel small, so just draw them as single pixels.
     if (precomputedParams.isSubPixelSize)
     {
-        double depth = ((tri.v[0].pos.z + tri.v[1].pos.z + tri.v[2].pos.z) / 3.0);
+        double depth = ((tri.v[0].position[2] + tri.v[1].position[2] + tri.v[2].position[2]) / 3.0);
 
         int x = precomputedParams.boundingRect.left();
         int y = precomputedParams.boundingRect.top();
@@ -128,9 +128,9 @@ void vond::rasterize_triangle::barycentric(const vond::triangle &tri,
 
     // Draw all pixels that fall within the triangle's surface.
     {
-        #define BARY_INTERPOLATE(TRI_PARAM) ((tri.v[0].TRI_PARAM * xPos.x) +\
-                                             (tri.v[1].TRI_PARAM * xPos.y) +\
-                                             (tri.v[2].TRI_PARAM * xPos.z))
+        #define BARY_INTERPOLATE(TRI_PARAM) ((tri.v[0].TRI_PARAM * xPos[0]) +\
+                                             (tri.v[1].TRI_PARAM * xPos[1]) +\
+                                             (tri.v[2].TRI_PARAM * xPos[2]))
 
         vond::vector3<double> xPos = {};
         vond::vector3<double> yPos = (precomputedParams.topLeft - precomputedParams.yStep);
@@ -149,7 +149,7 @@ void vond::rasterize_triangle::barycentric(const vond::triangle &tri,
                 xPos += precomputedParams.xStep;
 
                 // If this pixel isn't inside the triangle.
-                if ((xPos.x < 0) || (xPos.y < 0) || (xPos.z < 0))
+                if ((xPos[0] < 0) || (xPos[1] < 0) || (xPos[2] < 0))
                 {
                     if (spanDone)
                     {
@@ -161,7 +161,7 @@ void vond::rasterize_triangle::barycentric(const vond::triangle &tri,
 
                 spanDone = true;
 
-                const double depth = BARY_INTERPOLATE(pos.z);
+                const double depth = BARY_INTERPOLATE(position[2]);
 
                 if (depth < dstDepthmap.pixel_at(x, y)[0])
                 {

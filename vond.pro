@@ -2,7 +2,7 @@
 
 TEMPLATE = app
 QT       += core gui widgets
-CONFIG   += console
+CONFIG   += console c++20
 
 OBJECTS_DIR = generated_files
 MOC_DIR = generated_files
@@ -37,7 +37,6 @@ HEADERS += \
     src/vond/render_landscape.h \
     src/vond/image.h \
     src/vond/matrix.h \
-    src/vond/render.h \
     src/auxiliary/display/qt/w_opengl.h \
     src/auxiliary/ui.h \
     src/auxiliary/ui/text.h \
@@ -48,6 +47,15 @@ HEADERS += \
     src/auxiliary/data_access/mesh_file.h \
     src/auxiliary/config_file_read.h \
     src/vond/vertex.h
+
+contains(DEFINES, INCLUDE_HOSEK_WILKIE_SKY) {
+    SOURCES += src/auxiliary/hosek-wilkie-sky/ArHosekSkyModel.cpp
+
+    HEADERS += src/auxiliary/hosek-wilkie-sky/ArHosekSkyModel.h \
+               src/auxiliary/hosek-wilkie-sky/ArHosekSkyModelData_CIEXYZ.h \
+               src/auxiliary/hosek-wilkie-sky/ArHosekSkyModelData_RGB.h \
+               src/auxiliary/hosek-wilkie-sky/ArHosekSkyModelData_Spectral.h
+}
 
 QMAKE_CC = gcc-10
 QMAKE_CXX = g++-10

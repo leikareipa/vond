@@ -1,6 +1,7 @@
 /*
- * Tarpeeksi Hyvae Soft 2018 /
- * Vond
+ * Tarpeeksi Hyvae Soft 2018-2021
+ *
+ * Software: Vond
  *
  */
 
@@ -11,108 +12,184 @@
 
 namespace vond
 {
-    template <typename T>
-    struct vector2
+    template <typename T, std::size_t NumComponents>
+    struct vector
     {
-        T x, y;
-    };
+        T components[NumComponents];
 
-    template <typename T>
-    struct vector3
-    {
-        T x, y, z;
-
-        vond::vector3<T> normalized(void) const
+        std::size_t size(void) const
         {
-            vond::vector3<T> ret = *this;
+            return NumComponents;
+        }
 
-            const double squaredNorm = ((this->x * this->x) + (this->y * this->y) + (this->z * this->z));
+        vond::vector<T, NumComponents> normalized(void) const
+        {
+            vond::vector<T, NumComponents> normalizedVec = *this;
 
-            if ((squaredNorm != 0) &&
-                (squaredNorm != 1))
+            const double selfLength = this->length();
+
+            if ((selfLength != 0) &&
+                (selfLength != 1))
             {
-                const double invNorm = (1 / sqrt(squaredNorm));
+                const double invNorm = (1 / sqrt(selfLength));
 
-                ret.x *= invNorm;
-                ret.y *= invNorm;
-                ret.z *= invNorm;
+                for (std::size_t i = 0; i < NumComponents; i++)
+                {
+                    normalizedVec.components[i] *= invNorm;
+                }
             }
 
-            return ret;
+            return normalizedVec;
         }
 
-        double dot(const vector3 &other) const
+        double dot(const vond::vector<T, NumComponents> &other) const
         {
-            return ((this->x * other.x) + (this->y * other.y) + (this->z * other.z));
+            double dotVal = 0;
+            for (std::size_t i = 0; i < NumComponents; i++)
+            {
+                dotVal += (this->components[i] * other.components[i]);
+            }
+
+            return dotVal;
         }
 
-        vond::vector3<T> cross(const vector3 &other) const
+        vond::vector<T, 3> cross(const vond::vector<T, 3> &other) const
         {
-            return {((this->y * other.z) - (this->z * other.y)),
-                    ((this->z * other.x) - (this->x * other.z)),
-                    ((this->x * other.y) - (this->y * other.x))};
+            static_assert(NumComponents == 3);
+
+            return {((this->components[1] * other.components[2]) - (this->components[2] * other.components[1])),
+                    ((this->components[2] * other.components[0]) - (this->components[0] * other.components[2])),
+                    ((this->components[0] * other.components[1]) - (this->components[1] * other.components[0]))};
         }
 
         double length(void) const
         {
-            return sqrt((this->x * this->x) + (this->y * this->y) + (this->z * this->z));
+            double lengthVal = 0;
+            for (std::size_t i = 0; i < NumComponents; i++)
+            {
+                lengthVal += (this->components[i] * this->components[i]);
+            }
+
+            return lengthVal;
         }
 
-        double distance_to(const vector3 &other) const
+        double distance_to(const vond::vector<T, NumComponents> &other) const
         {
-            return sqrt(((other.x - this->x) * (other.x - this->x)) +
-                        ((other.y - this->y) * (other.y - this->y)) +
-                        ((other.z - this->z) * (other.z - this->z)));
+            double distanceVal = 0;
+            for (std::size_t i = 0; i < NumComponents; i++)
+            {
+                distanceVal += ((other.components[i] - this->components[i]) * (other.components[i] - this->components[i]));
+            }
+
+            return sqrt(distanceVal);
         }
 
-        vond::vector3<T> operator*(const double x) const
+        T& operator[](const std::size_t componentIdx)
         {
-            return {T(this->x * x),
-                    T(this->y * x),
-                    T(this->z * x)};
+            vond_optional_assert((componentIdx < NumComponents), "About to overflow the vector component array.");
+
+            return this->components[componentIdx];
         }
 
-        vond::vector3<T> operator*(const vond::matrix44 &matrix) const
+        T operator[](const std::size_t componentIdx) const
         {
-            const decltype(this->x) x0 = ((matrix.elements[0] * this->x) + (matrix.elements[4] * this->y) + (matrix.elements[8] * this->z));
-            const decltype(this->y) y0 = ((matrix.elements[1] * this->x) + (matrix.elements[5] * this->y) + (matrix.elements[9] * this->z));
-            const decltype(this->z) z0 = ((matrix.elements[2] * this->x) + (matrix.elements[6] * this->y) + (matrix.elements[10] * this->z));
+            vond_optional_assert((componentIdx < NumComponents), "About to overflow the vector component array.");
 
-            return {x0, y0, z0};
+            return this->components[componentIdx];
         }
 
-        vond::vector3<T> operator-(const vector3 &other) const
+        vond::vector<T, 3> operator*(const vond::matrix44 &m44) const
         {
-            return {T(this->x - other.x),
-                    T(this->y - other.y),
-                    T(this->z - other.z)};
+            static_assert(NumComponents == 3);
+
+            vond::vector<T, 3> returnVec = *this;
+
+            return (returnVec *= m44);
         }
 
-        void operator*=(const vond::matrix44 &matrix)
+        vond::vector<T, 3>& operator*=(const vond::matrix44 &m44)
         {
-            *this = (*this * matrix);
+            static_assert(NumComponents == 3);
 
-            return;
+            T a = ((m44.elements[0] * this->components[0]) + (m44.elements[4] * this->components[1]) + (m44.elements[ 8] * this->components[2]));
+            T b = ((m44.elements[1] * this->components[0]) + (m44.elements[5] * this->components[1]) + (m44.elements[ 9] * this->components[2]));
+            T c = ((m44.elements[2] * this->components[0]) + (m44.elements[6] * this->components[1]) + (m44.elements[10] * this->components[2]));
+
+            this->components[0] = a;
+            this->components[1] = b;
+            this->components[2] = c;
+
+            return *this;
         }
 
-        void operator*=(const vector3 &v)
+        vond::vector<T, NumComponents> operator-(const vond::vector<T, NumComponents> &other) const
         {
-            this->x *= v.x;
-            this->y *= v.y;
-            this->z *= v.z;
+            vond::vector<T, NumComponents> returnVec = *this;
+            for (std::size_t i = 0; i < NumComponents; i++)
+            {
+                returnVec.components[i] -= other.components[i];
+            }
 
-            return;
+            return returnVec;
         }
 
-        void operator+=(const vector3 &other)
+        vond::vector<T, NumComponents> operator*(const double x) const
         {
-            this->x += other.x;
-            this->y += other.y;
-            this->z += other.z;
+            vond::vector<T, NumComponents> returnVec = *this;
 
-            return;
+            return (returnVec *= x);
+        }
+
+        vond::vector<T, NumComponents>& operator*=(const double x)
+        {
+            for (std::size_t i = 0; i < NumComponents; i++)
+            {
+                this->components[i] *= x;
+            }
+
+            return *this;
+        }
+
+        vond::vector<T, NumComponents> operator*(const vond::vector<T, NumComponents> other) const
+        {
+            vond::vector<T, NumComponents> returnVec = *this;
+
+            return (returnVec *= other);
+        }
+
+        vond::vector<T, NumComponents>& operator*=(const vond::vector<T, NumComponents> &other)
+        {
+            for (std::size_t i = 0; i < NumComponents; i++)
+            {
+                this.components[i] *= other.components[i];
+            }
+
+            return *this;
+        }
+
+        vond::vector<T, NumComponents> operator+(const vond::vector<T, NumComponents> other) const
+        {
+            vond::vector<T, NumComponents> returnVec = *this;
+
+            return (returnVec += other);
+        }
+
+        vond::vector<T, NumComponents>& operator+=(const vond::vector<T, NumComponents> &other)
+        {
+            for (std::size_t i = 0; i < NumComponents; i++)
+            {
+                this->components[i] += other.components[i];
+            }
+
+            return *this;
         }
     };
+
+    template <typename T>
+    using vector2 = vector<T, 2>;
+
+    template <typename T>
+    using vector3 = vector<T, 3>;
 }
 
 #endif

@@ -13,7 +13,7 @@ namespace vond
 {
     struct camera
     {
-        vond::vector3<double> pos;
+        vond::vector3<double> position;
         vond::vector3<double> orientation;
         double zoom;
         double fov;

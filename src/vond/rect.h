@@ -32,10 +32,10 @@ namespace vond
 
             for (unsigned i = 0; i < 3; i++)
             {
-                minX = std::min(minX, tri.v[i].pos.x);
-                maxX = std::max(maxX, tri.v[i].pos.x);
-                minY = std::min(minY, tri.v[i].pos.y);
-                maxY = std::max(maxY, tri.v[i].pos.y);
+                minX = std::min(minX, tri.v[i].position[0]);
+                maxX = std::max(maxX, tri.v[i].position[0]);
+                minY = std::min(minY, tri.v[i].position[1]);
+                maxY = std::max(maxY, tri.v[i].position[1]);
             }
 
             triRect.topLeft = {T(minX), T(minY)};
@@ -48,20 +48,20 @@ namespace vond
         {
             rect<T> newRect;
 
-            newRect.topLeft.x = std::max(this->left(), other.left());
-            newRect.topLeft.y = std::max(this->top(), other.top());
-            newRect.bottomRight.x = std::min(this->right(), other.right());
-            newRect.bottomRight.y = std::min(this->bottom(), other.bottom());
+            newRect.topLeft[0] = std::max(this->left(), other.left());
+            newRect.topLeft[1] = std::max(this->top(), other.top());
+            newRect.bottomRight[0] = std::min(this->right(), other.right());
+            newRect.bottomRight[1] = std::min(this->bottom(), other.bottom());
 
             return newRect;
         }
 
-        T width() const { return (bottomRight.x - topLeft.x); }
-        T height() const { return (bottomRight.y - topLeft.y); }
-        T left() const { return topLeft.x; }
-        T right() const { return bottomRight.x; }
-        T top() const { return topLeft.y; }
-        T bottom() const { return bottomRight.y; }
+        T width() const { return (bottomRight[0] - topLeft[0]); }
+        T height() const { return (bottomRight[1] - topLeft[1]); }
+        T left() const { return topLeft[0]; }
+        T right() const { return bottomRight[0]; }
+        T top() const { return topLeft[1]; }
+        T bottom() const { return bottomRight[1]; }
     };
 }
 

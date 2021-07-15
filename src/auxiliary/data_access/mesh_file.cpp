@@ -14,7 +14,6 @@
 #include "auxiliary/data_access/mesh_file.h"
 #include "auxiliary/config_file_read.h"
 #include "vond/triangle.h"
-#include "vond/render.h"
 
 // Returns the triangles stored in the given mesh config file.
 //
@@ -154,9 +153,9 @@ std::vector<vond::triangle> kmesh_mesh_triangles(const char *const meshFilename)
                             vert.uv[0] = 0;
                             vert.uv[1] = 0;
 
-                            vert.pos.x = std::stoi(line.params.at(0));
-                            vert.pos.y = std::stoi(line.params.at(1));
-                            vert.pos.z = std::stoi(line.params.at(2));
+                            vert.position[0] = std::stoi(line.params.at(0));
+                            vert.position[1] = std::stoi(line.params.at(1));
+                            vert.position[2] = std::stoi(line.params.at(2));
                             vert.w = 1;
                         }
 
@@ -170,10 +169,9 @@ std::vector<vond::triangle> kmesh_mesh_triangles(const char *const meshFilename)
 
                             meshFile.error_if_not(line.params.size() == 2, "Expected each vertex u,v coordinate pair to have only two entries.");
 
-                            // Extract the u,v data from the line. We clamp the values
-                            // to a maximum of 1-(float)eps to prevent out-of-bounds
-                            // access of texture data.
-                            static_assert(std::is_same<double, std::remove_all_extents<decltype(vert.uv)>::type>::value, "Expected a floating-point variable.");
+                            // Extract the u,v data from the line. We clamp the values to
+                            // a maximum of 1-epsilon to prevent out-of-bounds access of
+                            // texture data.
                             vert.uv[0] = std::min((std::stoi(line.params.at(0)) / 1000000.0), (1.0 - std::numeric_limits<float>::epsilon()));
                             vert.uv[1] = std::min((std::stoi(line.params.at(1)) / 1000000.0), (1.0 - std::numeric_limits<float>::epsilon()));
 
