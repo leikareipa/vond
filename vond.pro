@@ -33,6 +33,7 @@ HEADERS += \
     src/vond/image_mosaic.h \
     src/vond/rasterize_triangle_barycentric.h \
     src/vond/rasterize_triangle_scanline.h \
+    src/vond/ray.h \
     src/vond/rect.h \
     src/vond/render_landscape.h \
     src/vond/image.h \
