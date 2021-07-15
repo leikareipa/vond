@@ -90,12 +90,12 @@ int main(void)
 
         landscapeHeightmap.bilinear_filter(4);
 
-        const auto landscapeHeightmapSampler = [&landscapeHeightmap](const double x, const double y)->vond::color<double, 1>
+        const auto landscapeHeightmapSampler = [&landscapeHeightmap](const double x, const double y)->vond::color_grayscale<double>
         {
             return landscapeHeightmap.pixel_at(x, y);
         };
 
-        const auto landscapeTextureSampler = [&landscapeTexture](const double x, const double y)->vond::color<uint8_t, 4>
+        const auto landscapeTextureSampler = [&landscapeTexture](const double x, const double y)->vond::color_rgba<uint8_t>
         {
             if ((x < 0) || (x > landscapeTexture.width()) ||
                 (y < 0) || (y > landscapeTexture.height()))
@@ -106,12 +106,10 @@ int main(void)
             return landscapeTexture.bilinear_sample(x, y);
         };
 
-        const auto landscapeSkySampler = [&](const vond::vector3<double> &direction)->vond::color<uint8_t, 4>
+        const auto landscapeSkySampler = [&](const vond::vector3<double> &direction)->vond::color_rgb<uint8_t>
         {
             // The color at the base of the horizon.
-            vond::color<int, 3> horizonColor = {105, 145, 180};
-
-            horizonColor *= 0.95;
+            vond::color<int, 3> horizonColor = {100, 138, 171};
 
             // The amount by which the base horizon color becomes darker towards the zenith.
             const double rayZenithAngle = abs(direction.dot(vond::vector3<double>{0, 1, 0}));
@@ -119,8 +117,7 @@ int main(void)
 
             return {uint8_t(std::min(255, std::max(0, (horizonColor.channel_at(0) - zenithAttenuation)))),
                     uint8_t(std::min(255, std::max(0, (horizonColor.channel_at(1) - zenithAttenuation)))),
-                    uint8_t(std::min(255, std::max(0, (horizonColor.channel_at(2) - zenithAttenuation)))),
-                    255u};
+                    uint8_t(std::min(255, std::max(0, (horizonColor.channel_at(2) - zenithAttenuation))))};
         };
 
         /// TODO: In the future, camera initialization will be handled somewhere other than here.

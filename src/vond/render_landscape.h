@@ -15,9 +15,9 @@
 
 namespace vond
 {
-    void render_landscape(std::function<vond::color<double, 1>(const double x, const double y)> heightmapSampler,
-                          std::function<vond::color<uint8_t, 4>(const double x, const double y)> textureSampler,
-                          std::function<vond::color<uint8_t, 4>(const vond::vector3<double> &direction)> skySampler,
+    void render_landscape(std::function<vond::color_grayscale<double>(const double x, const double y)> heightmapSampler,
+                          std::function<vond::color_rgba<uint8_t>(const double x, const double y)> textureSampler,
+                          std::function<vond::color_rgb<uint8_t>(const vond::vector3<double> &direction)> skySampler,
                           vond::image<uint8_t, 4> &dstPixelmap,
                           vond::image<double, 1> &dstDepthmap,
                           const vond::camera &camera);

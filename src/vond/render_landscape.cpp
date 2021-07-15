@@ -49,9 +49,9 @@ struct ray_s
     vond::vector3<double> dir;
 };
 
-void vond::render_landscape(std::function<vond::color<double, 1>(const double x, const double y)> heightmapSampler,
-                            std::function<vond::color<uint8_t, 4>(const double x, const double y)> textureSampler,
-                            std::function<vond::color<uint8_t, 4>(const vond::vector3<double> &direction)> skySampler,
+void vond::render_landscape(std::function<vond::color_grayscale<double>(const double x, const double y)> heightmapSampler,
+                            std::function<vond::color_rgba<uint8_t>(const double x, const double y)> textureSampler,
+                            std::function<vond::color_rgb<uint8_t>(const vond::vector3<double> &direction)> skySampler,
                             vond::image<uint8_t, 4> &dstPixelmap,
                             vond::image<double, 1> &dstDepthmap,
                             const vond::camera &camera)
@@ -130,10 +130,10 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
                         // is taller than the ray's current height).
                         if (voxelHeight >= ray.pos[1])
                         {
-                            const vond::color<uint8_t, 4> color = textureSampler(ray.pos[0], ray.pos[2]);
+                            const vond::color<uint8_t, 4> groundColor = textureSampler(ray.pos[0], ray.pos[2]);
 
                             // If this pixel in the ground texture is fully transparent.
-                            if (!color.channel_at(3))
+                            if (!groundColor.channel_at(3))
                             {
                                 goto draw_sky;
                             }
@@ -142,7 +142,7 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
 
                             for (unsigned i = 0; i < PIXEL_WIDTH_MULTIPLIER; i++)
                             {
-                                dstPixelmap.pixel_at((x + i), (dstPixelmap.height() - y - 1)) = color;
+                                dstPixelmap.pixel_at((x + i), (dstPixelmap.height() - y - 1)) = groundColor;
                                 dstDepthmap.pixel_at((x + i), (dstDepthmap.height() - y - 1)) = {depth};
                             }
 
@@ -166,7 +166,7 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
             // Draw the sky for the rest of this screen slice's height.
             draw_sky:
             {
-                // Kludge fix for there sometimes being 1 pixel thin holes between the terrain and the sky.
+                // Kludge fix for there sometimes being 1 pixel thick holes between the terrain and the sky.
                 if ((y > 0) && (y < (dstPixelmap.height() - 1)))
                 {
                     y--;
@@ -175,12 +175,12 @@ void vond::render_landscape(std::function<vond::color<double, 1>(const double x,
                 for (; y < dstPixelmap.height(); y++)
                 {
                     const double screenPlaneY = (2.0 * ((y + 0.5) / dstPixelmap.height()) - 1.0) * tanFov;
-                    const auto rayDirection = (vond::vector3<double>{screenPlaneX, screenPlaneY, camera.zoom} * viewMatrix);
-                    const vond::color<uint8_t, 4> color = skySampler(rayDirection.normalized());
+                    const auto rayDirection = (vond::vector3<double>{screenPlaneX, screenPlaneY, camera.zoom} * viewMatrix).normalized();
+                    const vond::color_rgb<uint8_t> skyColor = skySampler(rayDirection);
 
                     for (unsigned i = 0; i < PIXEL_WIDTH_MULTIPLIER; i++)
                     {
-                        dstPixelmap.pixel_at((x + i), (dstPixelmap.height() - y - 1)) = color;
+                        dstPixelmap.pixel_at((x + i), (dstPixelmap.height() - y - 1)) = {skyColor[0], skyColor[1], skyColor[2], 255};
                         dstDepthmap.pixel_at((x + i), (dstDepthmap.height() - y - 1)) = {std::numeric_limits<double>::max()};
                     }
                 }
