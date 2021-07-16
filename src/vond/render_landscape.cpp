@@ -49,9 +49,9 @@ struct ray_s
     vond::vector3<double> dir;
 };
 
-void vond::render_landscape(std::function<vond::color_grayscale<double>(const double x, const double y)> heightmapSampler,
-                            std::function<vond::color_rgba<uint8_t>(const double x, const double y)> textureSampler,
-                            std::function<vond::color_rgb<uint8_t>(const vond::vector3<double> &direction)> skySampler,
+void vond::render_landscape(std::function<vond::color_grayscale<double>(const vond::vector3<double> &samplePosition, const vond::vector3<double> &viewerPosition)> heightmapSampler,
+                            std::function<vond::color_rgba<uint8_t>(const vond::vector3<double> &samplePosition, const vond::vector3<double> &viewerPosition)> textureSampler,
+                            std::function<vond::color_rgb<uint8_t>(const vond::vector3<double> &outDirection, const vond::vector3<double> &viewerPosition)> skySampler,
                             vond::image<uint8_t, 4> &dstPixelmap,
                             vond::image<double, 1> &dstDepthmap,
                             const vond::camera &camera)
@@ -124,13 +124,13 @@ void vond::render_landscape(std::function<vond::color_grayscale<double>(const do
                     for (; rayDepth < (MAX_RAY_LENGTH / RAY_STEP_SIZE); stepsTaken++)
                     {
                         // Get the height of the voxel that's directly below this ray.
-                        double voxelHeight = heightmapSampler(ray.pos[0], ray.pos[2]).channel_at(0);
+                        double voxelHeight = heightmapSampler(ray.pos, camera.position).channel_at(0);
 
                         // Draw the voxel if the ray intersects it (i.e. if the voxel
                         // is taller than the ray's current height).
                         if (voxelHeight >= ray.pos[1])
                         {
-                            const vond::color<uint8_t, 4> groundColor = textureSampler(ray.pos[0], ray.pos[2]);
+                            const vond::color<uint8_t, 4> groundColor = textureSampler(ray.pos, camera.position);
 
                             // If this pixel in the ground texture is fully transparent.
                             if (!groundColor.channel_at(3))
@@ -176,7 +176,7 @@ void vond::render_landscape(std::function<vond::color_grayscale<double>(const do
                 {
                     const double screenPlaneY = (2.0 * ((y + 0.5) / dstPixelmap.height()) - 1.0) * tanFov;
                     const auto rayDirection = (vond::vector3<double>{screenPlaneX, screenPlaneY, camera.zoom} * viewMatrix).normalized();
-                    const vond::color_rgb<uint8_t> skyColor = skySampler(rayDirection);
+                    const vond::color_rgb<uint8_t> skyColor = skySampler(rayDirection, camera.position);
 
                     for (unsigned i = 0; i < PIXEL_WIDTH_MULTIPLIER; i++)
                     {

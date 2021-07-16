@@ -84,6 +84,17 @@ namespace vond
             return sqrt(distanceVal);
         }
 
+        vond::vector<T, NumComponents> lerp(const vond::vector<T, NumComponents> &other, const double lerp) const
+        {
+            vond::vector<T, NumComponents> lerpedVec;
+            for (std::size_t i = 0; i < NumComponents; i++)
+            {
+                lerpedVec.components[i] = std::lerp(this->components[i], other.components[i], lerp);
+            }
+
+            return lerpedVec;
+        }
+
         T& operator[](const std::size_t componentIdx)
         {
             vond_optional_assert((componentIdx < NumComponents), "About to overflow the vector component array.");

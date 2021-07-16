@@ -90,29 +90,38 @@ int main(void)
 
         landscapeHeightmap.bilinear_filter(4);
 
-        const auto landscapeHeightmapSampler = [&landscapeHeightmap](const double x, const double y)->vond::color_grayscale<double>
+        const auto landscapeHeightmapSampler = [&landscapeHeightmap]
+        (const vond::vector3<double> &samplePosition, const vond::vector3<double> &viewerPosition)->vond::color_grayscale<double>
         {
-            return landscapeHeightmap.pixel_at(x, y);
+            (void)viewerPosition;
+
+            return landscapeHeightmap.pixel_at(samplePosition[0], samplePosition[2]);
         };
 
-        const auto landscapeTextureSampler = [&landscapeTexture](const double x, const double y)->vond::color_rgba<uint8_t>
+        const auto landscapeTextureSampler = [&landscapeTexture]
+        (const vond::vector3<double> &samplePosition, const vond::vector3<double> &viewerPosition)->vond::color_rgba<uint8_t>
         {
-            if ((x < 0) || (x > landscapeTexture.width()) ||
-                (y < 0) || (y > landscapeTexture.height()))
+            (void)viewerPosition;
+
+            if ((samplePosition[0] < 0) || (samplePosition[0] > landscapeTexture.width()) ||
+                (samplePosition[2] < 0) || (samplePosition[2] > landscapeTexture.height()))
             {
                 return {0, 0, 0, 0};
             }
 
-            return landscapeTexture.bilinear_sample(x, y);
+            return landscapeTexture.bilinear_sample(samplePosition[0], samplePosition[2]);
         };
 
-        const auto landscapeSkySampler = [&](const vond::vector3<double> &direction)->vond::color_rgb<uint8_t>
+        const auto landscapeSkySampler = [&]
+        (const vond::vector3<double> &outDirection, const vond::vector3<double> &viewerPosition)->vond::color_rgb<uint8_t>
         {
+            (void)viewerPosition;
+
             // The color at the base of the horizon.
             vond::color<int, 3> horizonColor = {100, 138, 171};
 
             // The amount by which the base horizon color becomes darker towards the zenith.
-            const double rayZenithAngle = abs(direction.dot(vond::vector3<double>{0, 1, 0}));
+            const double rayZenithAngle = abs(outDirection.dot(vond::vector3<double>{0, 1, 0}));
             const int zenithAttenuation = std::min(100, int(100 * rayZenithAngle));
 
             return {uint8_t(std::min(255, std::max(0, (horizonColor.channel_at(0) - zenithAttenuation)))),
